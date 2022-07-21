@@ -445,8 +445,7 @@ static RPCHelpMan getblockfrompeer()
     PeerManager& peerman = EnsurePeerman(node);
 
     const uint256& block_hash{ParseHashV(request.params[0], "blockhash")};
-    const NodeId peer_id{request.params[1].getInt<int64_t>()};
-
+    const NodeId peer_id{request.params[1].get_int64()};
     const CBlockIndex* const index = WITH_LOCK(cs_main, return chainman.m_blockman.LookupBlockIndex(block_hash););
 
     if (!index) {
@@ -1147,7 +1146,7 @@ static void SoftForkDescPushBack(const CBlockIndex* blockindex, UniValue& softfo
 
     // BIP9 status
     bip9.pushKV("status", get_state_name(current_state));
-    bip9.pushKV("since", chainman.m_versionbitscache.StateSinceHeight(blockindex->pprev, chainman.GetConsensus(), id));
+    bip9.pushKV("since", g_versionbitscache.StateSinceHeight(blockindex->pprev, consensusParams, id));
     bip9.pushKV("status_next", get_state_name(next_state));
 
     // BIP9 signalling status, if applicable

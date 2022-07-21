@@ -6,8 +6,6 @@
 #define BITCOIN_QT_TEST_OPTIONTESTS_H
 
 #include <qt/optionsmodel.h>
-#include <univalue.h>
-#include <util/settings.h>
 
 #include <QObject>
 
@@ -15,17 +13,13 @@ class OptionTests : public QObject
 {
     Q_OBJECT
 public:
-    explicit OptionTests(interfaces::Node& node);
+    explicit OptionTests(interfaces::Node& node) : m_node(node) {}
 
 private Q_SLOTS:
-    void init(); // called before each test function execution.
-    void migrateSettings();
-    void integerGetArgBug();
-    void parametersInteraction();
+    void optionTests();
 
 private:
     interfaces::Node& m_node;
-    util::Settings m_previous_settings;
 };
 
 #endif // BITCOIN_QT_TEST_OPTIONTESTS_H

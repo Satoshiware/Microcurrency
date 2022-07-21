@@ -416,10 +416,8 @@ Defining `DEBUG_LOCKCONTENTION` adds a "lock" logging category to the logging
 RPC that, when enabled, logs the location and duration of each lock contention
 to the `debug.log` file.
 
-The `--enable-debug` configure option adds `-DDEBUG_LOCKCONTENTION` to the
-compiler flags. You may also enable it manually for a non-debug build by running
-configure with `-DDEBUG_LOCKCONTENTION` added to your CPPFLAGS,
-i.e. `CPPFLAGS="-DDEBUG_LOCKCONTENTION"`, then build and run bitcoind.
+To enable it, run configure with `-DDEBUG_LOCKCONTENTION` added to your
+CPPFLAGS, e.g. `CPPFLAGS="-DDEBUG_LOCKCONTENTION"`, then build and run bitcoind.
 
 You can then use the `-debug=lock` configuration option at bitcoind startup or
 `bitcoin-cli logging '["lock"]'` at runtime to turn on lock contention logging.

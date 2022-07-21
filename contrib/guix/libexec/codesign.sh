@@ -89,6 +89,9 @@ mkdir -p "$DISTSRC"
                       -o "${OUTDIR}/${DISTNAME}-${HOST}.dmg" \
                       dist \
                       -- -volume_date all_file_dates ="$SOURCE_DATE_EPOCH"
+
+            # Compress uncompressed.dmg and output to OUTDIR
+            ./dmg dmg uncompressed.dmg "${OUTDIR}/${DISTNAME}-${HOST}.dmg"
             ;;
         *)
             exit 1

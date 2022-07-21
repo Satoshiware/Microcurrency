@@ -12,10 +12,11 @@
 #include <undo.h>
 #include <validation.h>
 
-using node::CCoinsStats;
-using node::GetBogoSize;
+using kernel::CCoinsStats;
+using kernel::GetBogoSize;
+using kernel::TxOutSer;
+
 using node::ReadBlockFromDisk;
-using node::TxOutSer;
 using node::UndoReadFromDisk;
 
 static constexpr uint8_t DB_BLOCK_HASH{'s'};
@@ -228,10 +229,9 @@ bool CoinStatsIndex::WriteBlock(const CBlock& block, const CBlockIndex* pindex)
     m_muhash.Finalize(out);
     value.second.muhash = out;
 
-    CDBBatch batch(*m_db);
-    batch.Write(DBHeightKey(pindex->nHeight), value);
-    batch.Write(DB_MUHASH, m_muhash);
-    return m_db->WriteBatch(batch);
+    // Intentionally do not update DB_MUHASH here so it stays in sync with
+    // DB_BEST_BLOCK, and the index is not corrupted if there is an unclean shutdown.
+    return m_db->Write(DBHeightKey(pindex->nHeight), value);
 }
 
 static bool CopyHeightIndexToHashIndex(CDBIterator& db_it, CDBBatch& batch,
@@ -278,7 +278,7 @@ bool CoinStatsIndex::Rewind(const CBlockIndex* current_tip, const CBlockIndex* n
 
     {
         LOCK(cs_main);
-        CBlockIndex* iter_tip{m_chainstate->m_blockman.LookupBlockIndex(current_tip->GetBlockHash())};
+        const CBlockIndex* iter_tip{m_chainstate->m_blockman.LookupBlockIndex(current_tip->GetBlockHash())};
         const auto& consensus_params{Params().GetConsensus()};
 
         do {
@@ -317,28 +317,31 @@ static bool LookUpOne(const CDBWrapper& db, const CBlockIndex* block_index, DBVa
     return db.Read(DBHashKey(block_index->GetBlockHash()), result);
 }
 
-bool CoinStatsIndex::LookUpStats(const CBlockIndex* block_index, CCoinsStats& coins_stats) const
+std::optional<CCoinsStats> CoinStatsIndex::LookUpStats(const CBlockIndex* block_index) const
 {
+    CCoinsStats stats{Assert(block_index)->nHeight, block_index->GetBlockHash()};
+    stats.index_used = true;
+
     DBVal entry;
     if (!LookUpOne(*m_db, block_index, entry)) {
-        return false;
+        return std::nullopt;
     }
 
-    coins_stats.hashSerialized = entry.muhash;
-    coins_stats.nTransactionOutputs = entry.transaction_output_count;
-    coins_stats.nBogoSize = entry.bogo_size;
-    coins_stats.total_amount = entry.total_amount;
-    coins_stats.total_subsidy = entry.total_subsidy;
-    coins_stats.total_unspendable_amount = entry.total_unspendable_amount;
-    coins_stats.total_prevout_spent_amount = entry.total_prevout_spent_amount;
-    coins_stats.total_new_outputs_ex_coinbase_amount = entry.total_new_outputs_ex_coinbase_amount;
-    coins_stats.total_coinbase_amount = entry.total_coinbase_amount;
-    coins_stats.total_unspendables_genesis_block = entry.total_unspendables_genesis_block;
-    coins_stats.total_unspendables_bip30 = entry.total_unspendables_bip30;
-    coins_stats.total_unspendables_scripts = entry.total_unspendables_scripts;
-    coins_stats.total_unspendables_unclaimed_rewards = entry.total_unspendables_unclaimed_rewards;
+    stats.hashSerialized = entry.muhash;
+    stats.nTransactionOutputs = entry.transaction_output_count;
+    stats.nBogoSize = entry.bogo_size;
+    stats.total_amount = entry.total_amount;
+    stats.total_subsidy = entry.total_subsidy;
+    stats.total_unspendable_amount = entry.total_unspendable_amount;
+    stats.total_prevout_spent_amount = entry.total_prevout_spent_amount;
+    stats.total_new_outputs_ex_coinbase_amount = entry.total_new_outputs_ex_coinbase_amount;
+    stats.total_coinbase_amount = entry.total_coinbase_amount;
+    stats.total_unspendables_genesis_block = entry.total_unspendables_genesis_block;
+    stats.total_unspendables_bip30 = entry.total_unspendables_bip30;
+    stats.total_unspendables_scripts = entry.total_unspendables_scripts;
+    stats.total_unspendables_unclaimed_rewards = entry.total_unspendables_unclaimed_rewards;
 
-    return true;
+    return stats;
 }
 
 bool CoinStatsIndex::Init()
@@ -386,6 +389,14 @@ bool CoinStatsIndex::Init()
     }
 
     return true;
+}
+
+bool CoinStatsIndex::CommitInternal(CDBBatch& batch)
+{
+    // DB_MUHASH should always be committed in a batch together with DB_BEST_BLOCK
+    // to prevent an inconsistent state of the DB.
+    batch.Write(DB_MUHASH, m_muhash);
+    return BaseIndex::CommitInternal(batch);
 }
 
 // Reverse a single block as part of a reorg
@@ -489,5 +500,5 @@ bool CoinStatsIndex::ReverseBlock(const CBlock& block, const CBlockIndex* pindex
     Assert(m_total_unspendables_scripts == read_out.second.total_unspendables_scripts);
     Assert(m_total_unspendables_unclaimed_rewards == read_out.second.total_unspendables_unclaimed_rewards);
 
-    return m_db->Write(DB_MUHASH, m_muhash);
+    return true;
 }

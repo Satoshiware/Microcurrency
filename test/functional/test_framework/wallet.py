@@ -8,16 +8,24 @@ from copy import deepcopy
 from decimal import Decimal
 from enum import Enum
 from random import choice
-from typing import Optional
+from typing import (
+    Any,
+    List,
+    Optional,
+)
 from test_framework.address import (
     base58_to_byte,
     create_deterministic_address_bcrt1_p2tr_op_true,
     key_to_p2pkh,
     key_to_p2sh_p2wpkh,
     key_to_p2wpkh,
+    output_key_to_p2tr,
 )
 from test_framework.descriptors import descsum_create
-from test_framework.key import ECKey
+from test_framework.key import (
+    ECKey,
+    compute_xonly_pubkey,
+)
 from test_framework.messages import (
     COIN,
     COutPoint,
@@ -34,6 +42,7 @@ from test_framework.script import (
     OP_NOP,
     OP_TRUE,
     SIGHASH_ALL,
+    taproot_construct,
 )
 from test_framework.script_util import (
     key_to_p2pk_script,
@@ -93,6 +102,9 @@ class MiniWallet:
             self._address, self._internal_key = create_deterministic_address_bcrt1_p2tr_op_true()
             self._scriptPubKey = bytes.fromhex(self._test_node.validateaddress(self._address)['scriptPubKey'])
 
+    def get_balance(self):
+        return sum(u['value'] for u in self._utxos)
+
     def rescan_utxos(self):
         """Drop all utxos and rescan the utxo set"""
         self._utxos = []
@@ -121,6 +133,7 @@ class MiniWallet:
             if not fixed_length:
                 break
         tx.vin[0].scriptSig = CScript([der_sig + bytes(bytearray([SIGHASH_ALL]))])
+        tx.rehash()
 
     def generate(self, num_blocks, **kwargs):
         """Generate blocks with coinbase outputs to the internal address, and append the outputs to the internal list"""
@@ -131,28 +144,41 @@ class MiniWallet:
             self._utxos.append({'txid': cb_tx['txid'], 'vout': 0, 'value': cb_tx['vout'][0]['value'], 'height': block_info['height']})
         return blocks
 
+    def get_scriptPubKey(self):
+        return self._scriptPubKey
+
     def get_descriptor(self):
         return descsum_create(f'raw({self._scriptPubKey.hex()})')
 
     def get_address(self):
         return self._address
 
-    def get_utxo(self, *, txid: Optional[str]='', mark_as_spent=True):
+    def get_utxo(self, *, txid: str = '', vout: Optional[int] = None, mark_as_spent=True) -> dict:
         """
         Returns a utxo and marks it as spent (pops it from the internal list)
 
         Args:
         txid: get the first utxo we find from a specific transaction
         """
-        index = -1  # by default the last utxo
         self._utxos = sorted(self._utxos, key=lambda k: (k['value'], -k['height']))  # Put the largest utxo last
         if txid:
-            utxo = next(filter(lambda utxo: txid == utxo['txid'], self._utxos))
-            index = self._utxos.index(utxo)
+            utxo_filter: Any = filter(lambda utxo: txid == utxo['txid'], self._utxos)
+        else:
+            utxo_filter = reversed(self._utxos)  # By default the largest utxo
+        if vout is not None:
+            utxo_filter = filter(lambda utxo: vout == utxo['vout'], utxo_filter)
+        index = self._utxos.index(next(utxo_filter))
         if mark_as_spent:
             return self._utxos.pop(index)
         else:
             return self._utxos[index]
+
+    def get_utxos(self, *, mark_as_spent=True):
+        """Returns the list of all utxos and optionally mark them as spent"""
+        utxos = deepcopy(self._utxos)
+        if mark_as_spent:
+            self._utxos = []
+        return utxos
 
     def send_self_transfer(self, **kwargs):
         """Create and send a tx with the specified fee_rate. Fee may be exact or at most one satoshi higher than needed."""
@@ -172,14 +198,62 @@ class MiniWallet:
 
         Returns a tuple (txid, n) referring to the created external utxo outpoint.
         """
-        tx = self.create_self_transfer(from_node=from_node, fee_rate=0, mempool_valid=False)['tx']
+        tx = self.create_self_transfer(from_node=from_node, fee_rate=0)["tx"]
         assert_greater_than_or_equal(tx.vout[0].nValue, amount + fee)
         tx.vout[0].nValue -= (amount + fee)           # change output -> MiniWallet
         tx.vout.append(CTxOut(amount, scriptPubKey))  # arbitrary output -> to be returned
         txid = self.sendrawtransaction(from_node=from_node, tx_hex=tx.serialize().hex())
         return txid, 1
 
-    def create_self_transfer(self, *, fee_rate=Decimal("0.003"), from_node=None, utxo_to_spend=None, mempool_valid=True, locktime=0, sequence=0):
+    def send_self_transfer_multi(self, **kwargs):
+        """
+        Create and send a transaction that spends the given UTXOs and creates a
+        certain number of outputs with equal amounts.
+
+        Returns a dictionary with
+            - txid
+            - serialized transaction in hex format
+            - transaction as CTransaction instance
+            - list of newly created UTXOs, ordered by vout index
+        """
+        tx = self.create_self_transfer_multi(**kwargs)
+        txid = self.sendrawtransaction(from_node=kwargs['from_node'], tx_hex=tx.serialize().hex())
+        return {'new_utxos': [self.get_utxo(txid=txid, vout=vout) for vout in range(len(tx.vout))],
+                'txid': txid, 'hex': tx.serialize().hex(), 'tx': tx}
+
+    def create_self_transfer_multi(
+            self, *, from_node,
+            utxos_to_spend: Optional[List[dict]] = None,
+            num_outputs=1,
+            sequence=0,
+            fee_per_output=1000):
+        """
+        Create and return a transaction that spends the given UTXOs and creates a
+        certain number of outputs with equal amounts.
+        """
+        utxos_to_spend = utxos_to_spend or [self.get_utxo()]
+        # create simple tx template (1 input, 1 output)
+        tx = self.create_self_transfer(
+            fee_rate=0, from_node=from_node,
+            utxo_to_spend=utxos_to_spend[0], sequence=sequence)["tx"]
+
+        # duplicate inputs, witnesses and outputs
+        tx.vin = [deepcopy(tx.vin[0]) for _ in range(len(utxos_to_spend))]
+        tx.wit.vtxinwit = [deepcopy(tx.wit.vtxinwit[0]) for _ in range(len(utxos_to_spend))]
+        tx.vout = [deepcopy(tx.vout[0]) for _ in range(num_outputs)]
+
+        # adapt input prevouts
+        for i, utxo in enumerate(utxos_to_spend):
+            tx.vin[i] = CTxIn(COutPoint(int(utxo['txid'], 16), utxo['vout']))
+
+        # adapt output amounts (use fixed fee per output)
+        inputs_value_total = sum([int(COIN * utxo['value']) for utxo in utxos_to_spend])
+        outputs_value_total = inputs_value_total - fee_per_output * num_outputs
+        for o in tx.vout:
+            o.nValue = outputs_value_total // num_outputs
+        return tx
+
+    def create_self_transfer(self, *, fee_rate=Decimal("0.003"), from_node=None, utxo_to_spend=None, locktime=0, sequence=0):
         """Create and return a tx with the specified fee_rate. Fee may be exact or at most one satoshi higher than needed."""
         from_node = from_node or self._test_node
         utxo_to_spend = utxo_to_spend or self.get_utxo()
@@ -207,23 +281,20 @@ class MiniWallet:
             tx.wit.vtxinwit[0].scriptWitness.stack = [CScript([OP_TRUE]), bytes([LEAF_VERSION_TAPSCRIPT]) + self._internal_key]
         tx_hex = tx.serialize().hex()
 
-        tx_info = from_node.testmempoolaccept([tx_hex])[0]
-        assert_equal(mempool_valid, tx_info['allowed'])
-        if mempool_valid:
-            assert_equal(tx_info['vsize'], vsize)
-            assert_equal(tx_info['fees']['base'], utxo_to_spend['value'] - Decimal(send_value) / COIN)
-        return {'txid': tx_info['txid'], 'wtxid': tx_info['wtxid'], 'hex': tx_hex, 'tx': tx}
+        assert_equal(tx.get_vsize(), vsize)
 
-    def sendrawtransaction(self, *, from_node, tx_hex, **kwargs):
-        txid = from_node.sendrawtransaction(hexstring=tx_hex, **kwargs)
+        return {'txid': tx.rehash(), 'wtxid': tx.getwtxid(), 'hex': tx_hex, 'tx': tx}
+
+    def sendrawtransaction(self, *, from_node, tx_hex, maxfeerate=0, **kwargs):
+        txid = from_node.sendrawtransaction(hexstring=tx_hex, maxfeerate=maxfeerate, **kwargs)
         self.scan_tx(from_node.decoderawtransaction(tx_hex))
         return txid
 
 
-def getnewdestination(address_type='bech32'):
+def getnewdestination(address_type='bech32m'):
     """Generate a random destination of the specified type and return the
        corresponding public key, scriptPubKey and address. Supported types are
-       'legacy', 'p2sh-segwit' and 'bech32'. Can be used when a random
+       'legacy', 'p2sh-segwit', 'bech32' and 'bech32m'. Can be used when a random
        destination is needed, but no compiled wallet is available (e.g. as
        replacement to the getnewaddress/getaddressinfo RPCs)."""
     key = ECKey()
@@ -238,7 +309,11 @@ def getnewdestination(address_type='bech32'):
     elif address_type == 'bech32':
         scriptpubkey = key_to_p2wpkh_script(pubkey)
         address = key_to_p2wpkh(pubkey)
-    # TODO: also support bech32m (need to generate x-only-pubkey)
+    elif address_type == 'bech32m':
+        tap = taproot_construct(compute_xonly_pubkey(key.get_bytes())[0])
+        pubkey = tap.output_pubkey
+        scriptpubkey = tap.scriptPubKey
+        address = output_key_to_p2tr(pubkey)
     else:
         assert False
     return pubkey, scriptpubkey, address

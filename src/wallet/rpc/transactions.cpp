@@ -15,6 +15,7 @@ using interfaces::FoundBlock;
 
 namespace wallet {
 static void WalletTxToJSON(const CWallet& wallet, const CWalletTx& wtx, UniValue& entry)
+    EXCLUSIVE_LOCKS_REQUIRED(wallet.cs_wallet)
 {
     interfaces::Chain& chain = wallet.chain();
     int confirms = wallet.GetTxDepthInMainChain(wtx);
@@ -34,6 +35,7 @@ static void WalletTxToJSON(const CWallet& wallet, const CWalletTx& wtx, UniValue
     }
     uint256 hash = wtx.GetHash();
     entry.pushKV("txid", hash.GetHex());
+    entry.pushKV("wtxid", wtx.GetWitnessHash().GetHex());
     UniValue conflicts(UniValue::VARR);
     for (const uint256& conflict : wallet.GetTxConflicts(wtx))
         conflicts.push_back(conflict.GetHex());
@@ -62,9 +64,7 @@ struct tallyitem
     int nConf{std::numeric_limits<int>::max()};
     std::vector<uint256> txids;
     bool fIsWatchonly{false};
-    tallyitem()
-    {
-    }
+    tallyitem() = default;
 };
 
 static UniValue ListReceived(const CWallet& wallet, const UniValue& params, const bool by_label, const bool include_immature_coinbase) EXCLUSIVE_LOCKS_REQUIRED(wallet.cs_wallet)
@@ -72,7 +72,7 @@ static UniValue ListReceived(const CWallet& wallet, const UniValue& params, cons
     // Minimum confirmations
     int nMinDepth = 1;
     if (!params[0].isNull())
-        nMinDepth = params[0].get_int();
+        nMinDepth = params[0].getInt<int>();
 
     // Whether to include empty labels
     bool fIncludeEmpty = false;
@@ -95,14 +95,6 @@ static UniValue ListReceived(const CWallet& wallet, const UniValue& params, cons
         has_filtered_address = true;
     }
 
-    // Excluding coinbase outputs is deprecated
-    // It can be enabled by setting deprecatedrpc=exclude_coinbase
-    const bool include_coinbase{!wallet.chain().rpcEnableDeprecated("exclude_coinbase")};
-
-    if (include_immature_coinbase && !include_coinbase) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "include_immature_coinbase is incompatible with deprecated exclude_coinbase");
-    }
-
     // Tally
     std::map<CTxDestination, tallyitem> mapTally;
     for (const std::pair<const uint256, CWalletTx>& pairWtx : wallet.mapWallet) {
@@ -113,7 +105,7 @@ static UniValue ListReceived(const CWallet& wallet, const UniValue& params, cons
             continue;
 
         // Coinbase with less than 1 confirmation is no longer in the main chain
-        if ((wtx.IsCoinBase() && (nDepth < 1 || !include_coinbase))
+        if ((wtx.IsCoinBase() && (nDepth < 1))
             || (wallet.IsTxImmatureCoinBase(wtx) && !include_immature_coinbase))
         {
             continue;
@@ -431,6 +423,7 @@ static const std::vector<RPCResult> TransactionDescriptionString()
            {RPCResult::Type::NUM, "blockindex", /*optional=*/true, "The index of the transaction in the block that includes it."},
            {RPCResult::Type::NUM_TIME, "blocktime", /*optional=*/true, "The block time expressed in " + UNIX_EPOCH_TIME + "."},
            {RPCResult::Type::STR_HEX, "txid", "The transaction id."},
+           {RPCResult::Type::STR_HEX, "wtxid", "The hash of serialized transaction, including witness data."},
            {RPCResult::Type::ARR, "walletconflicts", "Conflicting transaction ids.",
            {
                {RPCResult::Type::STR_HEX, "txid", "The transaction id."},
@@ -511,10 +504,10 @@ RPCHelpMan listtransactions()
     }
     int nCount = 10;
     if (!request.params[1].isNull())
-        nCount = request.params[1].get_int();
+        nCount = request.params[1].getInt<int>();
     int nFrom = 0;
     if (!request.params[2].isNull())
-        nFrom = request.params[2].get_int();
+        nFrom = request.params[2].getInt<int>();
     isminefilter filter = ISMINE_SPENDABLE;
 
     if (ParseIncludeWatchonly(request.params[3], *pwallet)) {
@@ -637,7 +630,7 @@ RPCHelpMan listsinceblock()
     }
 
     if (!request.params[1].isNull()) {
-        target_confirms = request.params[1].get_int();
+        target_confirms = request.params[1].getInt<int>();
 
         if (target_confirms < 1) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
@@ -798,7 +791,7 @@ RPCHelpMan gettransaction()
 
     if (verbose) {
         UniValue decoded(UniValue::VOBJ);
-        TxToUniv(*wtx.tx, uint256(), decoded, false);
+        TxToUniv(*wtx.tx, /*block_hash=*/uint256(), /*entry=*/decoded, /*include_hex=*/false);
         entry.pushKV("decoded", decoded);
     }
 
@@ -891,14 +884,14 @@ RPCHelpMan rescanblockchain()
         int tip_height = pwallet->GetLastBlockHeight();
 
         if (!request.params[0].isNull()) {
-            start_height = request.params[0].get_int();
+            start_height = request.params[0].getInt<int>();
             if (start_height < 0 || start_height > tip_height) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid start_height");
             }
         }
 
         if (!request.params[1].isNull()) {
-            stop_height = request.params[1].get_int();
+            stop_height = request.params[1].getInt<int>();
             if (*stop_height < 0 || *stop_height > tip_height) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid stop_height");
             } else if (*stop_height < start_height) {

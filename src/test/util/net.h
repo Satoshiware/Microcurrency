@@ -150,12 +150,23 @@ public:
         return 0;
     }
 
+    int SetSockOpt(int, int, const void*, socklen_t) const override { return 0; }
+
     bool Wait(std::chrono::milliseconds timeout,
               Event requested,
               Event* occurred = nullptr) const override
     {
         if (occurred != nullptr) {
             *occurred = requested;
+        }
+        return true;
+    }
+
+    bool WaitMany(std::chrono::milliseconds timeout, EventsPerSock& events_per_sock) const override
+    {
+        for (auto& [sock, events] : events_per_sock) {
+            (void)sock;
+            events.occurred = events.requested;
         }
         return true;
     }

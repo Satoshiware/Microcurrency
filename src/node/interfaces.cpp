@@ -22,7 +22,7 @@
 #include <node/coin.h>
 #include <node/context.h>
 #include <node/transaction.h>
-#include <node/ui_interface.h>
+#include <node/interface_ui.h>
 #include <policy/feerate.h>
 #include <policy/fees.h>
 #include <policy/policy.h>
@@ -90,8 +90,16 @@ public:
     uint32_t getLogCategories() override { return LogInstance().GetCategoryMask(); }
     bool baseInitialize() override
     {
-        return AppInitBasicSetup(gArgs) && AppInitParameterInteraction(gArgs) && AppInitSanityChecks() &&
-               AppInitLockDataDirectory() && AppInitInterfaces(*m_context);
+        if (!AppInitBasicSetup(gArgs)) return false;
+        if (!AppInitParameterInteraction(gArgs, /*use_syscall_sandbox=*/false)) return false;
+
+        m_context->kernel = std::make_unique<kernel::Context>();
+        if (!AppInitSanityChecks(*m_context->kernel)) return false;
+
+        if (!AppInitLockDataDirectory()) return false;
+        if (!AppInitInterfaces(*m_context)) return false;
+
+        return true;
     }
     bool appInitMain(interfaces::BlockAndHeaderTipInfo* tip_info) override
     {
@@ -112,6 +120,46 @@ public:
         }
     }
     bool shutdownRequested() override { return ShutdownRequested(); }
+    bool isSettingIgnored(const std::string& name) override
+    {
+        bool ignored = false;
+        gArgs.LockSettings([&](util::Settings& settings) {
+            if (auto* options = util::FindKey(settings.command_line_options, name)) {
+                ignored = !options->empty();
+            }
+        });
+        return ignored;
+    }
+    util::SettingsValue getPersistentSetting(const std::string& name) override { return gArgs.GetPersistentSetting(name); }
+    void updateRwSetting(const std::string& name, const util::SettingsValue& value) override
+    {
+        gArgs.LockSettings([&](util::Settings& settings) {
+            if (value.isNull()) {
+                settings.rw_settings.erase(name);
+            } else {
+                settings.rw_settings[name] = value;
+            }
+        });
+        gArgs.WriteSettingsFile();
+    }
+    void forceSetting(const std::string& name, const util::SettingsValue& value) override
+    {
+        gArgs.LockSettings([&](util::Settings& settings) {
+            if (value.isNull()) {
+                settings.forced_settings.erase(name);
+            } else {
+                settings.forced_settings[name] = value;
+            }
+        });
+    }
+    void resetSettings() override
+    {
+        gArgs.WriteSettingsFile(/*errors=*/nullptr, /*backup=*/true);
+        gArgs.LockSettings([&](util::Settings& settings) {
+            settings.rw_settings.clear();
+        });
+        gArgs.WriteSettingsFile();
+    }
     void mapPort(bool use_upnp, bool use_natpmp) override { StartMapPort(use_upnp, use_natpmp); }
     bool getProxy(Network net, Proxy& proxy_info) override { return GetProxy(net, proxy_info); }
     size_t getNodeCount(ConnectionDirection flags) override
@@ -212,9 +260,10 @@ public:
     bool getHeaderTip(int& height, int64_t& block_time) override
     {
         LOCK(::cs_main);
-        if (::pindexBestHeader) {
-            height = ::pindexBestHeader->nHeight;
-            block_time = ::pindexBestHeader->GetBlockTime();
+        auto best_header = chainman().m_best_header;
+        if (best_header) {
+            height = best_header->nHeight;
+            block_time = best_header->GetBlockTime();
             return true;
         }
         return false;
@@ -227,7 +276,7 @@ public:
     uint256 getBestBlockHash() override
     {
         const CBlockIndex* tip = WITH_LOCK(::cs_main, return chainman().ActiveChain().Tip());
-        return tip ? tip->GetBlockHash() : Params().GenesisBlock().GetHash();
+        return tip ? tip->GetBlockHash() : chainman().GetParams().GenesisBlock().GetHash();
     }
     int64_t getLastBlockTime() override
     {
@@ -235,7 +284,7 @@ public:
         if (chainman().ActiveChain().Tip()) {
             return chainman().ActiveChain().Tip()->GetBlockTime();
         }
-        return Params().GenesisBlock().GetBlockTime(); // Genesis block's time of current network
+        return chainman().GetParams().GenesisBlock().GetBlockTime(); // Genesis block's time of current network
     }
     double getVerificationProgress() override
     {
@@ -244,7 +293,7 @@ public:
             LOCK(::cs_main);
             tip = chainman().ActiveChain().Tip();
         }
-        return GuessVerificationProgress(Params().TxData(), tip);
+        return GuessVerificationProgress(chainman().GetParams().TxData(), tip);
     }
     bool isInitialBlockDownload() override {
         return chainman().ActiveChainstate().IsInitialBlockDownload();
@@ -425,7 +474,7 @@ public:
                 // try to handle the request. Otherwise, reraise the exception.
                 if (!last_handler) {
                     const UniValue& code = e["code"];
-                    if (code.isNum() && code.get_int() == RPC_WALLET_NOT_FOUND) {
+                    if (code.isNum() && code.getInt<int>() == RPC_WALLET_NOT_FOUND) {
                         return false;
                     }
                 }
@@ -490,7 +539,7 @@ public:
     {
         LOCK(cs_main);
         const CChainState& active = Assert(m_node.chainman)->ActiveChainstate();
-        if (CBlockIndex* fork = active.FindForkInGlobalIndex(locator)) {
+        if (const CBlockIndex* fork = active.FindForkInGlobalIndex(locator)) {
             return fork->nHeight;
         }
         return std::nullopt;
@@ -545,7 +594,7 @@ public:
     double guessVerificationProgress(const uint256& block_hash) override
     {
         LOCK(cs_main);
-        return GuessVerificationProgress(Params().TxData(), chainman().m_blockman.LookupBlockIndex(block_hash));
+        return GuessVerificationProgress(chainman().GetParams().TxData(), chainman().m_blockman.LookupBlockIndex(block_hash));
     }
     bool hasBlocks(const uint256& block_hash, int min_height, std::optional<int> max_height) override
     {
@@ -557,7 +606,7 @@ public:
         // used to limit the range, and passing min_height that's too low or
         // max_height that's too high will not crash or change the result.
         LOCK(::cs_main);
-        if (CBlockIndex* block = chainman().m_blockman.LookupBlockIndex(block_hash)) {
+        if (const CBlockIndex* block = chainman().m_blockman.LookupBlockIndex(block_hash)) {
             if (max_height && block->nHeight >= *max_height) block = block->GetAncestor(*max_height);
             for (; block->nStatus & BLOCK_HAVE_DATA; block = block->pprev) {
                 // Check pprev to not segfault if min_height is too low
@@ -590,7 +639,7 @@ public:
         bool relay,
         std::string& err_string) override
     {
-        const TransactionError err = BroadcastTransaction(m_node, tx, err_string, max_tx_fee, relay, /*wait_callback*/ false);
+        const TransactionError err = BroadcastTransaction(m_node, tx, err_string, max_tx_fee, relay, /*wait_callback=*/false);
         // Chain clients only care about failures to accept the tx to the mempool. Disregard non-mempool related failures.
         // Note: this will need to be updated if BroadcastTransactions() is updated to return other non-mempool failures
         // that Chain clients do not need to know about.
@@ -644,7 +693,7 @@ public:
     bool havePruned() override
     {
         LOCK(cs_main);
-        return node::fHavePruned;
+        return m_node.chainman->m_blockman.m_have_pruned;
     }
     bool isReadyToBroadcast() override { return !node::fImporting && !node::fReindex && !isInitialBlockDownload(); }
     bool isInitialBlockDownload() override {

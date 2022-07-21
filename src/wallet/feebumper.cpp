@@ -135,7 +135,7 @@ static CFeeRate EstimateFeeRate(const CWallet& wallet, const CWalletTx& wtx, con
     feerate += std::max(node_incremental_relay_fee, wallet_incremental_relay_fee);
 
     // Fee rate must also be at least the wallet's GetMinimumFeeRate
-    CFeeRate min_feerate(GetMinimumFeeRate(wallet, coin_control, /* feeCalc */ nullptr));
+    CFeeRate min_feerate(GetMinimumFeeRate(wallet, coin_control, /*feeCalc=*/nullptr));
 
     // Set the required fee rate for the replacement transaction in coin control.
     return std::max(feerate, min_feerate);
@@ -218,27 +218,20 @@ Result CreateRateBumpTransaction(CWallet& wallet, const uint256& txid, const CCo
     // We cannot source new unconfirmed inputs(bip125 rule 2)
     new_coin_control.m_min_depth = 1;
 
-    CTransactionRef tx_new;
-    CAmount fee_ret;
-    int change_pos_in_out = -1; // No requested location for change
+    constexpr int RANDOM_CHANGE_POSITION = -1;
     bilingual_str fail_reason;
     FeeCalculation fee_calc_out;
-    if (!CreateTransaction(wallet, recipients, tx_new, fee_ret, change_pos_in_out, fail_reason, new_coin_control, fee_calc_out, false)) {
+    std::optional<CreatedTransactionResult> txr = CreateTransaction(wallet, recipients, RANDOM_CHANGE_POSITION, fail_reason, new_coin_control, fee_calc_out, false);
+    if (!txr) {
         errors.push_back(Untranslated("Unable to create transaction.") + Untranslated(" ") + fail_reason);
         return Result::WALLET_ERROR;
     }
 
     // Write back new fee if successful
-    new_fee = fee_ret;
+    new_fee = txr->fee;
 
     // Write back transaction
-    mtx = CMutableTransaction(*tx_new);
-    // Mark new tx not replaceable, if requested.
-    if (!coin_control.m_signal_bip125_rbf.value_or(wallet.m_signal_rbf)) {
-        for (auto& input : mtx.vin) {
-            if (input.nSequence < 0xfffffffe) input.nSequence = 0xfffffffe;
-        }
-    }
+    mtx = CMutableTransaction(*txr->tx);
 
     return Result::OK;
 }

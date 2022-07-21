@@ -24,6 +24,7 @@ void OptionTests::optionTests()
     });
     gArgs.WriteSettingsFile();
     OptionsModel{};
+
     gArgs.LockSettings([&](util::Settings& settings) {
         settings.rw_settings.erase("prune");
     });

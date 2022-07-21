@@ -44,8 +44,6 @@
 #include <assert.h>
 #include <optional>
 
-#include <boost/algorithm/string/replace.hpp>
-
 using interfaces::FoundBlock;
 
 namespace wallet {
@@ -299,18 +297,18 @@ std::shared_ptr<CWallet> CreateWallet(WalletContext& context, const std::string&
         return nullptr;
     }
 
+    // Do not allow a passphrase when private keys are disabled
+    if (!passphrase.empty() && (wallet_creation_flags & WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
+        error = Untranslated("Passphrase provided but private keys are disabled. A passphrase is only used to encrypt private keys, so cannot be used for wallets with private keys disabled.");
+        status = DatabaseStatus::FAILED_CREATE;
+        return nullptr;
+    }
+
     // Wallet::Verify will check if we're trying to create a wallet with a duplicate name.
     std::unique_ptr<WalletDatabase> database = MakeWalletDatabase(name, options, status, error);
     if (!database) {
         error = Untranslated("Wallet file verification failed.") + Untranslated(" ") + error;
         status = DatabaseStatus::FAILED_VERIFY;
-        return nullptr;
-    }
-
-    // Do not allow a passphrase when private keys are disabled
-    if (!passphrase.empty() && (wallet_creation_flags & WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-        error = Untranslated("Passphrase provided but private keys are disabled. A passphrase is only used to encrypt private keys, so cannot be used for wallets with private keys disabled.");
-        status = DatabaseStatus::FAILED_CREATE;
         return nullptr;
     }
 
@@ -366,6 +364,11 @@ std::shared_ptr<CWallet> CreateWallet(WalletContext& context, const std::string&
     // Write the wallet settings
     UpdateWalletSetting(*context.chain, name, load_on_start, warnings);
 
+    // Legacy wallets are being deprecated, warn if a newly created wallet is legacy
+    if (!(wallet_creation_flags & WALLET_FLAG_DESCRIPTORS)) {
+        warnings.push_back(_("Wallet created successfully. The legacy wallet type is being deprecated and support for creating and opening legacy wallets will be removed in the future."));
+    }
+
     status = DatabaseStatus::SUCCESS;
     return wallet;
 }
@@ -373,6 +376,7 @@ std::shared_ptr<CWallet> CreateWallet(WalletContext& context, const std::string&
 std::shared_ptr<CWallet> RestoreWallet(WalletContext& context, const fs::path& backup_file, const std::string& wallet_name, std::optional<bool> load_on_start, DatabaseStatus& status, bilingual_str& error, std::vector<bilingual_str>& warnings)
 {
     DatabaseOptions options;
+    ReadDatabaseArgs(*context.args, options);
     options.require_existing = true;
 
     if (!fs::exists(backup_file)) {
@@ -517,6 +521,11 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 
 void CWallet::chainStateFlushed(const CBlockLocator& loc)
 {
+    // Don't update the best block until the chain is attached so that in case of a shutdown,
+    // the rescan will be restarted at next startup.
+    if (m_attaching_chain) {
+        return;
+    }
     WalletBatch batch(GetDatabase());
     batch.WriteBestBlock(loc);
 }
@@ -620,14 +629,12 @@ void CWallet::SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator> ran
  * Outpoint is spent if any non-conflicted transaction
  * spends it:
  */
-bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
+bool CWallet::IsSpent(const COutPoint& outpoint) const
 {
-    const COutPoint outpoint(hash, n);
     std::pair<TxSpends::const_iterator, TxSpends::const_iterator> range;
     range = mapTxSpends.equal_range(outpoint);
 
-    for (TxSpends::const_iterator it = range.first; it != range.second; ++it)
-    {
+    for (TxSpends::const_iterator it = range.first; it != range.second; ++it) {
         const uint256& wtxid = it->second;
         std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
         if (mit != mapWallet.end()) {
@@ -676,12 +683,12 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
     CKeyingMaterial _vMasterKey;
 
     _vMasterKey.resize(WALLET_CRYPTO_KEY_SIZE);
-    GetStrongRandBytes(_vMasterKey.data(), WALLET_CRYPTO_KEY_SIZE);
+    GetStrongRandBytes(_vMasterKey);
 
     CMasterKey kMasterKey;
 
     kMasterKey.vchSalt.resize(WALLET_CRYPTO_SALT_SIZE);
-    GetStrongRandBytes(kMasterKey.vchSalt.data(), WALLET_CRYPTO_SALT_SIZE);
+    GetStrongRandBytes(kMasterKey.vchSalt);
 
     CCrypter crypter;
     int64_t nStartTime = GetTimeMillis();
@@ -899,35 +906,31 @@ void CWallet::SetSpentKeyState(WalletBatch& batch, const uint256& hash, unsigned
     }
 }
 
-bool CWallet::IsSpentKey(const uint256& hash, unsigned int n) const
+bool CWallet::IsSpentKey(const CScript& scriptPubKey) const
 {
     AssertLockHeld(cs_wallet);
-    const CWalletTx* srctx = GetWalletTx(hash);
-    if (srctx) {
-        assert(srctx->tx->vout.size() > n);
-        CTxDestination dest;
-        if (!ExtractDestination(srctx->tx->vout[n].scriptPubKey, dest)) {
-            return false;
-        }
-        if (IsAddressUsed(dest)) {
-            return true;
-        }
-        if (IsLegacy()) {
-            LegacyScriptPubKeyMan* spk_man = GetLegacyScriptPubKeyMan();
-            assert(spk_man != nullptr);
-            for (const auto& keyid : GetAffectedKeys(srctx->tx->vout[n].scriptPubKey, *spk_man)) {
-                WitnessV0KeyHash wpkh_dest(keyid);
-                if (IsAddressUsed(wpkh_dest)) {
-                    return true;
-                }
-                ScriptHash sh_wpkh_dest(GetScriptForDestination(wpkh_dest));
-                if (IsAddressUsed(sh_wpkh_dest)) {
-                    return true;
-                }
-                PKHash pkh_dest(keyid);
-                if (IsAddressUsed(pkh_dest)) {
-                    return true;
-                }
+    CTxDestination dest;
+    if (!ExtractDestination(scriptPubKey, dest)) {
+        return false;
+    }
+    if (IsAddressUsed(dest)) {
+        return true;
+    }
+    if (IsLegacy()) {
+        LegacyScriptPubKeyMan* spk_man = GetLegacyScriptPubKeyMan();
+        assert(spk_man != nullptr);
+        for (const auto& keyid : GetAffectedKeys(scriptPubKey, *spk_man)) {
+            WitnessV0KeyHash wpkh_dest(keyid);
+            if (IsAddressUsed(wpkh_dest)) {
+                return true;
+            }
+            ScriptHash sh_wpkh_dest(GetScriptForDestination(wpkh_dest));
+            if (IsAddressUsed(sh_wpkh_dest)) {
+                return true;
+            }
+            PKHash pkh_dest(keyid);
+            if (IsAddressUsed(pkh_dest)) {
+                return true;
             }
         }
     }
@@ -1007,14 +1010,14 @@ CWalletTx* CWallet::AddToWallet(CTransactionRef tx, const TxState& state, const 
 
     if (!strCmd.empty())
     {
-        boost::replace_all(strCmd, "%s", hash.GetHex());
+        ReplaceAll(strCmd, "%s", hash.GetHex());
         if (auto* conf = wtx.state<TxStateConfirmed>())
         {
-            boost::replace_all(strCmd, "%b", conf->confirmed_block_hash.GetHex());
-            boost::replace_all(strCmd, "%h", ToString(conf->confirmed_block_height));
+            ReplaceAll(strCmd, "%b", conf->confirmed_block_hash.GetHex());
+            ReplaceAll(strCmd, "%h", ToString(conf->confirmed_block_height));
         } else {
-            boost::replace_all(strCmd, "%b", "unconfirmed");
-            boost::replace_all(strCmd, "%h", "-1");
+            ReplaceAll(strCmd, "%b", "unconfirmed");
+            ReplaceAll(strCmd, "%h", "-1");
         }
 #ifndef WIN32
         // Substituting the wallet name isn't currently supported on windows
@@ -1022,7 +1025,7 @@ CWalletTx* CWallet::AddToWallet(CTransactionRef tx, const TxState& state, const 
         // https://github.com/bitcoin/bitcoin/pull/13339#issuecomment-537384875
         // A few ways it could be implemented in the future are described in:
         // https://github.com/bitcoin/bitcoin/pull/13339#issuecomment-461288094
-        boost::replace_all(strCmd, "%w", ShellEscape(GetName()));
+        ReplaceAll(strCmd, "%w", ShellEscape(GetName()));
 #endif
         std::thread t(runCommand, strCmd);
         t.detach(); // thread runs free
@@ -1698,8 +1701,10 @@ int64_t CWallet::RescanFromTime(int64_t startTime, const WalletRescanReserver& r
  */
 CWallet::ScanResult CWallet::ScanForWalletTransactions(const uint256& start_block, int start_height, std::optional<int> max_height, const WalletRescanReserver& reserver, bool fUpdate)
 {
-    int64_t nNow = GetTime();
-    int64_t start_time = GetTimeMillis();
+    using Clock = std::chrono::steady_clock;
+    constexpr auto LOG_INTERVAL{60s};
+    auto current_time{Clock::now()};
+    auto start_time{Clock::now()};
 
     assert(reserver.isReserved());
 
@@ -1726,8 +1731,8 @@ CWallet::ScanResult CWallet::ScanForWalletTransactions(const uint256& start_bloc
         if (block_height % 100 == 0 && progress_end - progress_begin > 0.0) {
             ShowProgress(strprintf("%s " + _("Rescanning…").translated, GetDisplayName()), std::max(1, std::min(99, (int)(m_scanning_progress * 100))));
         }
-        if (GetTime() >= nNow + 60) {
-            nNow = GetTime();
+        if (Clock::now() >= current_time + LOG_INTERVAL) {
+            current_time = Clock::now();
             WalletLogPrintf("Still rescanning. At block %d. Progress=%f\n", block_height, progress_current);
         }
 
@@ -1794,7 +1799,8 @@ CWallet::ScanResult CWallet::ScanForWalletTransactions(const uint256& start_bloc
         WalletLogPrintf("Rescan interrupted by shutdown request at block %d. Progress=%f\n", block_height, progress_current);
         result.status = ScanResult::USER_ABORT;
     } else {
-        WalletLogPrintf("Rescan completed in %15dms\n", GetTimeMillis() - start_time);
+        auto duration_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time);
+        WalletLogPrintf("Rescan completed in %15dms\n", duration_milliseconds.count());
     }
     return result;
 }
@@ -1829,6 +1835,8 @@ void CWallet::ReacceptWalletTransactions()
 
 bool CWallet::SubmitTxMemoryPoolAndRelay(CWalletTx& wtx, std::string& err_string, bool relay) const
 {
+    AssertLockHeld(cs_wallet);
+
     // Can't relay if wallet is not broadcasting
     if (!GetBroadcastTransactions()) return false;
     // Don't relay abandoned transactions
@@ -1857,12 +1865,11 @@ bool CWallet::SubmitTxMemoryPoolAndRelay(CWalletTx& wtx, std::string& err_string
 
 std::set<uint256> CWallet::GetTxConflicts(const CWalletTx& wtx) const
 {
-    std::set<uint256> result;
-    {
-        uint256 myHash = wtx.GetHash();
-        result = GetConflicts(myHash);
-        result.erase(myHash);
-    }
+    AssertLockHeld(cs_wallet);
+
+    const uint256 myHash{wtx.GetHash()};
+    std::set<uint256> result{GetConflicts(myHash)};
+    result.erase(myHash);
     return result;
 }
 
@@ -2093,7 +2100,7 @@ void CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
 
     // Add tx to wallet, because if it has change it's also ours,
     // otherwise just for transaction history.
-    AddToWallet(tx, TxStateInactive{}, [&](CWalletTx& wtx, bool new_tx) {
+    CWalletTx* wtx = AddToWallet(tx, TxStateInactive{}, [&](CWalletTx& wtx, bool new_tx) {
         CHECK_NONFATAL(wtx.mapValue.empty());
         CHECK_NONFATAL(wtx.vOrderForm.empty());
         wtx.mapValue = std::move(mapValue);
@@ -2103,6 +2110,11 @@ void CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
         return true;
     });
 
+    // wtx can only be null if the db write failed.
+    if (!wtx) {
+        throw std::runtime_error(std::string(__func__) + ": Wallet db error, transaction commit failed");
+    }
+
     // Notify that old coins are spent
     for (const CTxIn& txin : tx->vin) {
         CWalletTx &coin = mapWallet.at(txin.prevout.hash);
@@ -2110,17 +2122,13 @@ void CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
         NotifyTransactionChanged(coin.GetHash(), CT_UPDATED);
     }
 
-    // Get the inserted-CWalletTx from mapWallet so that the
-    // wtx cached mempool state is updated correctly
-    CWalletTx& wtx = mapWallet.at(tx->GetHash());
-
     if (!fBroadcastTransactions) {
         // Don't submit tx to the mempool
         return;
     }
 
     std::string err_string;
-    if (!SubmitTxMemoryPoolAndRelay(wtx, err_string, true)) {
+    if (!SubmitTxMemoryPoolAndRelay(*wtx, err_string, true)) {
         WalletLogPrintf("CommitTransaction(): Transaction cannot be broadcast immediately, %s\n", err_string);
         // TODO: if we expect the failure to be long term or permanent, instead delete wtx from the wallet and return failure.
     }
@@ -2436,12 +2444,10 @@ bool CWallet::UnlockAllCoins()
     return success;
 }
 
-bool CWallet::IsLockedCoin(uint256 hash, unsigned int n) const
+bool CWallet::IsLockedCoin(const COutPoint& output) const
 {
     AssertLockHeld(cs_wallet);
-    COutPoint outpt(hash, n);
-
-    return (setLockedCoins.count(outpt) > 0);
+    return setLockedCoins.count(output) > 0;
 }
 
 void CWallet::ListLockedCoins(std::vector<COutPoint>& vOutpts) const
@@ -2762,7 +2768,7 @@ std::shared_ptr<CWallet> CWallet::Create(WalletContext& context, const std::stri
     } else if (wallet_creation_flags & WALLET_FLAG_DISABLE_PRIVATE_KEYS) {
         // Make it impossible to disable private keys after creation
         error = strprintf(_("Error loading %s: Private keys can only be disabled during creation"), walletFile);
-        return NULL;
+        return nullptr;
     } else if (walletInstance->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
         for (auto spk_man : walletInstance->GetActiveScriptPubKeyMans()) {
             if (spk_man->HavePrivateKeys()) {
@@ -2928,14 +2934,31 @@ bool CWallet::AttachChain(const std::shared_ptr<CWallet>& walletInstance, interf
     assert(!walletInstance->m_chain || walletInstance->m_chain == &chain);
     walletInstance->m_chain = &chain;
 
+    // Unless allowed, ensure wallet files are not reused across chains:
+    if (!gArgs.GetBoolArg("-walletcrosschain", DEFAULT_WALLETCROSSCHAIN)) {
+        WalletBatch batch(walletInstance->GetDatabase());
+        CBlockLocator locator;
+        if (batch.ReadBestBlock(locator) && locator.vHave.size() > 0 && chain.getHeight()) {
+            // Wallet is assumed to be from another chain, if genesis block in the active
+            // chain differs from the genesis block known to the wallet.
+            if (chain.getBlockHash(0) != locator.vHave.back()) {
+                error = Untranslated("Wallet files should not be reused across chains. Restart bitcoind with -walletcrosschain to override.");
+                return false;
+            }
+        }
+    }
+
     // Register wallet with validationinterface. It's done before rescan to avoid
     // missing block connections between end of rescan and validation subscribing.
     // Because of wallet lock being hold, block connection notifications are going to
     // be pending on the validation-side until lock release. It's likely to have
     // block processing duplicata (if rescan block range overlaps with notification one)
     // but we guarantee at least than wallet state is correct after notifications delivery.
+    // However, chainStateFlushed notifications are ignored until the rescan is finished
+    // so that in case of a shutdown event, the rescan will be repeated at the next start.
     // This is temporary until rescan and notifications delivery are unified under same
     // interface.
+    walletInstance->m_attaching_chain = true; //ignores chainStateFlushed notifications
     walletInstance->m_chain_notifications_handler = walletInstance->chain().handleNotifications(walletInstance);
 
     // If rescan_required = true, rescan_height remains equal to 0
@@ -3001,9 +3024,11 @@ bool CWallet::AttachChain(const std::shared_ptr<CWallet>& walletInstance, interf
                 return false;
             }
         }
+        walletInstance->m_attaching_chain = false;
         walletInstance->chainStateFlushed(chain.getTipLocator());
         walletInstance->GetDatabase().IncrementUpdateCounter();
     }
+    walletInstance->m_attaching_chain = false;
 
     return true;
 }
@@ -3097,8 +3122,11 @@ int CWallet::GetTxDepthInMainChain(const CWalletTx& wtx) const
 
 int CWallet::GetTxBlocksToMaturity(const CWalletTx& wtx) const
 {
-    if (!wtx.IsCoinBase())
+    AssertLockHeld(cs_wallet);
+
+    if (!wtx.IsCoinBase()) {
         return 0;
+    }
     int chain_depth = GetTxDepthInMainChain(wtx);
     assert(chain_depth >= 0); // coinbase tx should not be conflicted
     return std::max(0, (COINBASE_MATURITY+1) - chain_depth);
@@ -3106,6 +3134,8 @@ int CWallet::GetTxBlocksToMaturity(const CWalletTx& wtx) const
 
 bool CWallet::IsTxImmatureCoinBase(const CWalletTx& wtx) const
 {
+    AssertLockHeld(cs_wallet);
+
     // note GetBlocksToMaturity is 0 for non-coinbase tx
     return GetTxBlocksToMaturity(wtx) > 0;
 }

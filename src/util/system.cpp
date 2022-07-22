@@ -292,7 +292,6 @@ const std::list<SectionInfo> ArgsManager::GetUnrecognizedSections() const
         CBaseChainParams::REGTEST,
         CBaseChainParams::SIGNET,
         CBaseChainParams::TESTNET,
-        CBaseChainParams::MICRO,
         CBaseChainParams::MAIN
     };
 
@@ -615,6 +614,11 @@ bool ArgsManager::IsArgNegated(const std::string& strArg) const
 std::string ArgsManager::GetArg(const std::string& strArg, const std::string& strDefault) const
 {
     const util::SettingsValue value = GetSetting(strArg);
+    return SettingToString(value, strDefault);
+}
+
+std::string SettingToString(const util::SettingsValue& value, const std::string& strDefault)
+{
     return value.isNull() ? strDefault : value.isFalse() ? "0" : value.isTrue() ? "1" : value.isNum() ? value.getValStr() : value.get_str();
 }
 
@@ -1035,11 +1039,10 @@ std::string ArgsManager::GetChainName() const
     const bool fRegTest = get_net("-regtest");
     const bool fSigNet  = get_net("-signet");
     const bool fTestNet = get_net("-testnet");
-    const bool fMicro = get_net("-micro");
     const bool is_chain_arg_set = IsArgSet("-chain");
 
-    if ((int)is_chain_arg_set + (int)fRegTest + (int)fSigNet + (int)fTestNet + (int)fMicro > 1) {
-        throw std::runtime_error("Invalid combination of -regtest, -signet, -testnet, -micro and -chain. Can use at most one.");
+    if ((int)is_chain_arg_set + (int)fRegTest + (int)fSigNet + (int)fTestNet > 1) {
+        throw std::runtime_error("Invalid combination of -regtest, -signet, -testnet and -chain. Can use at most one.");
     }
     if (fRegTest)
         return CBaseChainParams::REGTEST;
@@ -1048,8 +1051,6 @@ std::string ArgsManager::GetChainName() const
     }
     if (fTestNet)
         return CBaseChainParams::TESTNET;
-    if (fMicro)
-        return CBaseChainParams::MICRO;
 
     return GetArg("-chain", CBaseChainParams::MAIN);
 }

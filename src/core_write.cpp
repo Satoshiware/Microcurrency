@@ -151,11 +151,13 @@ void ScriptToUniv(const CScript& script, UniValue& out, bool include_hex, bool i
 {
     CTxDestination address;
 
-    out.pushKV("asm", ScriptToAsmStr(scriptPubKey));
+    out.pushKV("asm", ScriptToAsmStr(script));
     if (include_address) {
-        out.pushKV("desc", InferDescriptor(scriptPubKey, DUMMY_SIGNING_PROVIDER)->ToString());
+        out.pushKV("desc", InferDescriptor(script, DUMMY_SIGNING_PROVIDER)->ToString());
     }
-    if (include_hex) out.pushKV("hex", HexStr(scriptPubKey));
+    if (include_hex) {
+        out.pushKV("hex", HexStr(script));
+    }
 
     std::vector<std::vector<unsigned char>> solns;
     const TxoutType type{Solver(script, solns)};

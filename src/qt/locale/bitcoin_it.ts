@@ -1348,10 +1348,6 @@ E' possibile firmare solo con indirizzi di tipo "legacy".</translation>
         <source>Main Window</source>
         <translation type="unfinished">Finestra principale</translation>
     </message>
-    <message>
-        <source>&amp;Hide</source>
-        <translation type="unfinished">&amp;Nascondi</translation>
-    </message>
     <message numerus="yes">
         <source>%n active connection(s) to Bitcoin network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
@@ -1854,10 +1850,6 @@ E' possibile firmare solo con indirizzi di tipo "legacy".</translation>
 <context>
     <name>Intro</name>
     <message>
-        <source>%1 GB of space available</source>
-        <translation type="unfinished">%1 GB di spazio libero disponibile</translation>
-    </message>
-    <message>
         <source>(of %1 GB needed)</source>
         <translation type="unfinished">(di %1 GB necessari)</translation>
     </message>
@@ -2099,7 +2091,7 @@ E' possibile firmare solo con indirizzi di tipo "legacy".</translation>
     </message>
     <message>
         <source>Prune &amp;block storage to</source>
-        <translation type="unfinished">Modalità "prune": elimina i blocchi dal disco dopo</translation>
+        <translation type="unfinished">Eliminare e bloccare l'archiviazione su</translation>
     </message>
     <message>
         <source>Reverting this setting requires re-downloading the entire blockchain.</source>

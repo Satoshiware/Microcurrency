@@ -19,18 +19,16 @@ sudo apt-get -y update
 sudo apt-get -y upgrade
 
 ###Install Essential Tools
-sudo apt-get -y install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl zip
+sudo apt-get -y install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl
 
 ###Install SQLite (Required For The Descriptor Wallet)
 sudo apt-get -y install libsqlite3-dev
 
 ###Download Bitcoin
 sudo apt-get -y install git
-git clone https://github.com/satoshiware/bitcoin ./bitcoin
+git clone --branch testing https://github.com/satoshiware/bitcoin ./bitcoin ###########?????????????????????
 
-###git checkout $COMMIT_HASH #Find the latest release at this link and its corresponding commit hash (7 digit code)
-
-###Update, Add, or Overwrite microcurrency Header File: ./src/micro.h
+###Update, Add, or Overwrite microcurrency Header File: ./src/micro.h##############??????????????????????????????????????????
 
 ###Install Cross Compilation Dependencies
 #Linux x86 64-bit are already installed
@@ -64,33 +62,6 @@ mkdir bin
 ###Compress Install Files for "x86 64 Bit"
 tar -czvf ./bin/bitcoin-x86_64-linux-gnu.tar.gz ./bitcoin-install #x86 64-Bit
 
-###################################### ARM 32 Bit ##############################################
-###Prepare the Cross Compiler for "ARM 32 Bit"
-cd ./depends
-sudo make clean
-sudo make HOST=arm-linux-gnueabihf NO_QT=1 NO_QR=1 NO_UPNP=1 NO_NATPMP=1 NO_BOOST=1 NO_LIBEVENT=1 NO_ZMQ=1 NO_USDT=1 -j $(($(nproc)+1)) #ARM 32-bit
-
-###Make Configuration
-cd ..
-./autogen.sh # Make sure Bash's current working directory is the bitcoin directory
-
-### Select Configuration for "ARM 32 Bit"
-CONFIG_SITE=$PWD/depends/arm-linux-gnueabihf/share/config.site ./configure
-
-###Compile /w All Available Cores & Install
-make clean
-make -j $(($(nproc)+1))
-
-###Create Compressed Install Files in ./bin Directory
-rm -rf ./mkinstall
-rm -rf ./bitcoin-install
-make install DESTDIR=$PWD/mkinstall
-mv ./mkinstall/usr/local ./bitcoin-install
-mkdir bin
-
-###Compress Install Files for "ARM 32 Bit"
-tar -czvf ./bin/bitcoin-arm-linux-gnueabihf.tar.gz ./bitcoin-install #ARM 32-Bit
-		
 ###################################### ARM 64 Bit ##############################################
 ###Prepare the Cross Compiler for "ARM 64 Bit"
 cd ./depends
@@ -118,34 +89,6 @@ mkdir bin
 ###Compress Install Files for "ARM 64 Bit"
 tar -czvf ./bin/bitcoin-aarch64-linux-gnu.tar.gz ./bitcoin-install #ARM 64-Bit
 
-###################################### Windows x86 64 Bit ##############################################
-###Prepare the Cross Compiler for "Windows x86 64 Bit"
-cd ./depends
-sudo make clean
-sudo make HOST=x86_64-w64-mingw32 NO_QT=1 NO_QR=1 NO_UPNP=1 NO_NATPMP=1 NO_BOOST=1 NO_LIBEVENT=1 NO_ZMQ=1 NO_USDT=1 -j $(($(nproc)+1)) #Windows (x86 64-bit)
-
-###Make Configuration
-cd ..
-./autogen.sh # Make sure Bash's current working directory is the bitcoin directory
-
-### Select Configuration for "Windows x86 64 Bit"
-CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure
-###Compile /w All Available Cores & Install
-make clean
-make -j $(($(nproc)+1))
-
-###Create Compressed Install Files in ./bin Directory
-rm -rf ./mkinstall
-rm -rf ./bitcoin-install
-make install DESTDIR=$PWD/mkinstall
-mv ./mkinstall/usr/local ./bitcoin-install
-mkdir bin
-
-###Compress Install Files for "Windows x86 64 Bit"
-zip -ll -X -r ./bin/bitcoin-win64.zip ./bitcoin-install #Windows x86 64-bit
-
 ###################################### Calculate Hashes ##############################################
 sha256sum ./bin/bitcoin-aarch64-linux-gnu.tar.gz > ./bin/SHA256SUMS
-sha256sum ./bin/bitcoin-arm-linux-gnueabihf.tar.gz >> ./bin/SHA256SUMS
-sha256sum ./bin/bitcoin-win64.zip >> ./bin/SHA256SUMS
 sha256sum ./bin/bitcoin-x86_64-linux-gnu.tar.gz >> ./bin/SHA256SUMS

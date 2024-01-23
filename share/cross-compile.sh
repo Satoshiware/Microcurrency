@@ -2,7 +2,7 @@
 ####################################################################################################
 # This file generates the binanries (and sha 256 checksums) for microcurrency core (microcurrency edition)
 # from the https://github.com/satoshiware/microcurrency repository. This script was made for linux 
-# x86 64 bit and has been tested on Debian 11.
+# x86 & ARM 64 bit and has been tested on Debian 11.
 ####################################################################################################
 
 if [ "$EUID" -ne 0 ]
@@ -20,28 +20,26 @@ sudo apt-get -y upgrade
 
 ###Install Essential Tools
 sudo apt-get -y install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl zip
+sudo apt-get -y install g++-aarch64-linux-gnu binutils-aarch64-linux-gnu #ARM 64-bit
 
 ###Install SQLite (Required For The Descriptor Wallet)
 sudo apt-get -y install libsqlite3-dev
 
 ###Download Microcurrency
 sudo apt-get -y install git
-git clone --branch cleanup https://github.com/satoshiware/microcurrency ./microcurrency
+git clone --depth=1 --branch cleanup2 https://github.com/satoshiware/microcurrency ./microcurrency
+cd microcurrency
+rm -rf .git
 
 ###git checkout $COMMIT_HASH #Find the latest release at this link and its corresponding commit hash (7 digit code)
 
 ###Update, Add, or Overwrite microcurrency Header File: ./src/micro.h
 
-###Install Cross Compilation Dependencies
-#Linux x86 64-bit are already installed
-sudo apt-get -y install g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf #ARM 32-bit
-sudo apt-get -y install g++-aarch64-linux-gnu binutils-aarch64-linux-gnu #ARM 64-bit
-sudo apt -y install g++-mingw-w64-x86-64-posix #Windows x86 64-bit
-
+###################################### x86 64 Bit ##############################################
 ###Prepare the Cross Compiler for "x86 64 Bit"
-cd ./microcurrency/depends
+cd ./depends
 sudo make clean
-sudo make HOST=x86_64-pc-linux-gnu NO_QT=1 NO_QR=1 NO_UPNP=1 NO_NATPMP=1 NO_BOOST=1 NO_LIBEVENT=1 NO_ZMQ=1 NO_USDT=1 -j $(($(nproc)+1)) #x86 64-bit
+sudo make HOST=x86_64-pc-linux-gnu NO_TEST=1 NO_QT=1 NO_QR=1 NO_UPNP=1 NO_NATPMP=1 NO_BOOST=1 NO_LIBEVENT=1 NO_ZMQ=1 NO_USDT=1 -j $(($(nproc)+1)) #x86 64-bit
 
 ###Make Configuration
 cd ..
@@ -94,3 +92,7 @@ tar -czvf ./bin/microcurrency-aarch64-linux-gnu.tar.gz ./microcurrency-install #
 ###################################### Calculate Hashes ##############################################
 sha256sum ./bin/microcurrency-aarch64-linux-gnu.tar.gz > ./bin/SHA256SUMS
 sha256sum ./bin/microcurrency-x86_64-linux-gnu.tar.gz >> ./bin/SHA256SUMS
+
+
+#Well, renaiming this bad boy does not seem to be happening. What can we do?? I don't know.
+

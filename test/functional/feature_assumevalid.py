@@ -5,7 +5,7 @@
 """Test logic for skipping signature validation on old blocks.
 
 Test logic for skipping signature validation on blocks which we've assumed
-valid (https://github.com/bitcoin/bitcoin/pull/9484)
+valid (https://github.com/satoshiware/microcurrency/pull/9484)
 
 We build a chain that includes and invalid signature for one of the
 transactions:
@@ -47,7 +47,7 @@ from test_framework.messages import (
 )
 from test_framework.p2p import P2PInterface
 from test_framework.script import (CScript, OP_TRUE)
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import MicrocurrencyTestFramework
 from test_framework.util import assert_equal
 
 
@@ -58,7 +58,7 @@ class BaseNode(P2PInterface):
         self.send_message(headers_message)
 
 
-class AssumeValidTest(BitcoinTestFramework):
+class AssumeValidTest(MicrocurrencyTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3

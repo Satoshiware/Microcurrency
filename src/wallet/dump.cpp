@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace wallet {
-static const std::string DUMP_MAGIC = "BITCOIN_CORE_WALLET_DUMP";
+static const std::string DUMP_MAGIC = "MICROCURRENCY_CORE_WALLET_DUMP";
 uint32_t DUMP_VERSION = 1;
 
 bool DumpWallet(CWallet& wallet, bilingual_str& error)
@@ -105,7 +105,7 @@ bool DumpWallet(CWallet& wallet, bilingual_str& error)
 }
 
 // The standard wallet deleter function blocks on the validation interface
-// queue, which doesn't exist for the bitcoin-wallet. Define our own
+// queue, which doesn't exist for the microcurrency-wallet. Define our own
 // deleter here.
 static void WalletToolReleaseWallet(CWallet* wallet)
 {
@@ -153,7 +153,7 @@ bool CreateFromDump(const std::string& name, const fs::path& wallet_path, biling
         return false;
     }
     if (ver != DUMP_VERSION) {
-        error = strprintf(_("Error: Dumpfile version is not supported. This version of bitcoin-wallet only supports version 1 dumpfiles. Got dumpfile with version %s"), version_value);
+        error = strprintf(_("Error: Dumpfile version is not supported. This version of microcurrency-wallet only supports version 1 dumpfiles. Got dumpfile with version %s"), version_value);
         dump_file.close();
         return false;
     }

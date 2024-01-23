@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_LOAD_H
-#define BITCOIN_WALLET_LOAD_H
+#ifndef MICROCURRENCY_WALLET_LOAD_H
+#define MICROCURRENCY_WALLET_LOAD_H
 
 #include <string>
 #include <vector>
@@ -38,4 +38,4 @@ void StopWallets(WalletContext& context);
 void UnloadWallets(WalletContext& context);
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_LOAD_H
+#endif // MICROCURRENCY_WALLET_LOAD_H

@@ -7,11 +7,11 @@ noinst_PROGRAMS += test/fuzz/fuzz
 endif
 
 if !ENABLE_FUZZ
-bin_PROGRAMS += test/test_bitcoin
+bin_PROGRAMS += test/test_microcurrency
 endif
 
 TEST_SRCDIR = test
-TEST_BINARY=test/test_bitcoin$(EXEEXT)
+TEST_BINARY=test/test_microcurrency$(EXEEXT)
 FUZZ_BINARY=test/fuzz/fuzz$(EXEEXT)
 
 JSON_TEST_FILES = \
@@ -31,20 +31,20 @@ RAW_TEST_FILES = \
 
 GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.raw.h)
 
-BITCOIN_TEST_SUITE = \
+MICROCURRENCY_TEST_SUITE = \
   test/main.cpp \
   $(TEST_UTIL_H)
 
 FUZZ_SUITE_LD_COMMON = \
  $(LIBTEST_UTIL) \
  $(LIBTEST_FUZZ) \
- $(LIBBITCOIN_NODE) \
- $(LIBBITCOIN_WALLET) \
- $(LIBBITCOIN_COMMON) \
- $(LIBBITCOIN_UTIL) \
- $(LIBBITCOIN_CONSENSUS) \
- $(LIBBITCOIN_CRYPTO) \
- $(LIBBITCOIN_CLI) \
+ $(LIBMICROCURRENCY_NODE) \
+ $(LIBMICROCURRENCY_WALLET) \
+ $(LIBMICROCURRENCY_COMMON) \
+ $(LIBMICROCURRENCY_UTIL) \
+ $(LIBMICROCURRENCY_CONSENSUS) \
+ $(LIBMICROCURRENCY_CRYPTO) \
+ $(LIBMICROCURRENCY_CLI) \
  $(LIBUNIVALUE) \
  $(LIBLEVELDB) \
  $(LIBLEVELDB_SSE42) \
@@ -62,8 +62,8 @@ if USE_NATPMP
 FUZZ_SUITE_LD_COMMON += $(NATPMP_LIBS)
 endif
 
-# test_bitcoin binary #
-BITCOIN_TESTS =\
+# test_microcurrency binary #
+MICROCURRENCY_TESTS =\
   test/addrman_tests.cpp \
   test/allocator_tests.cpp \
   test/amount_tests.cpp \
@@ -155,7 +155,7 @@ BITCOIN_TESTS =\
   test/versionbits_tests.cpp
 
 if ENABLE_WALLET
-BITCOIN_TESTS += \
+MICROCURRENCY_TESTS += \
   wallet/test/psbt_wallet_tests.cpp \
   wallet/test/spend_tests.cpp \
   wallet/test/wallet_tests.cpp \
@@ -172,7 +172,7 @@ FUZZ_SUITE_LD_COMMON +=\
  $(BDB_LIBS)
 
 if USE_BDB
-BITCOIN_TESTS += wallet/test/db_tests.cpp
+MICROCURRENCY_TESTS += wallet/test/db_tests.cpp
 endif
 
 if USE_SQLITE
@@ -180,7 +180,7 @@ FUZZ_WALLET_SRC = \
  wallet/test/fuzz/notifications.cpp
 endif # USE_SQLITE
 
-BITCOIN_TEST_SUITE += \
+MICROCURRENCY_TEST_SUITE += \
   wallet/test/util.cpp \
   wallet/test/util.h \
   wallet/test/wallet_test_fixture.cpp \
@@ -189,27 +189,27 @@ BITCOIN_TEST_SUITE += \
   wallet/test/init_test_fixture.h
 endif # ENABLE_WALLET
 
-test_test_bitcoin_SOURCES = $(BITCOIN_TEST_SUITE) $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
-test_test_bitcoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(TESTDEFS) $(EVENT_CFLAGS)
-test_test_bitcoin_LDADD = $(LIBTEST_UTIL)
+test_test_microcurrency_SOURCES = $(MICROCURRENCY_TEST_SUITE) $(MICROCURRENCY_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
+test_test_microcurrency_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES) $(TESTDEFS) $(EVENT_CFLAGS)
+test_test_microcurrency_LDADD = $(LIBTEST_UTIL)
 if ENABLE_WALLET
-test_test_bitcoin_LDADD += $(LIBBITCOIN_WALLET)
+test_test_microcurrency_LDADD += $(LIBMICROCURRENCY_WALLET)
 endif
 
-test_test_bitcoin_LDADD += $(LIBBITCOIN_NODE) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) \
+test_test_microcurrency_LDADD += $(LIBMICROCURRENCY_NODE) $(LIBMICROCURRENCY_CLI) $(LIBMICROCURRENCY_COMMON) $(LIBMICROCURRENCY_UTIL) $(LIBMICROCURRENCY_CONSENSUS) $(LIBMICROCURRENCY_CRYPTO) $(LIBUNIVALUE) \
   $(LIBLEVELDB) $(LIBLEVELDB_SSE42) $(LIBMEMENV) $(LIBSECP256K1) $(EVENT_LIBS) $(EVENT_PTHREADS_LIBS) $(MINISKETCH_LIBS)
-test_test_bitcoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+test_test_microcurrency_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
-test_test_bitcoin_LDADD += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(SQLITE_LIBS)
-test_test_bitcoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS) -static
+test_test_microcurrency_LDADD += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(SQLITE_LIBS)
+test_test_microcurrency_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS) -static
 
 if ENABLE_ZMQ
-test_test_bitcoin_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
-FUZZ_SUITE_LD_COMMON += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+test_test_microcurrency_LDADD += $(LIBMICROCURRENCY_ZMQ) $(ZMQ_LIBS)
+FUZZ_SUITE_LD_COMMON += $(LIBMICROCURRENCY_ZMQ) $(ZMQ_LIBS)
 endif
 
 if ENABLE_FUZZ_BINARY
-test_fuzz_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+test_fuzz_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
 test_fuzz_fuzz_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 test_fuzz_fuzz_LDADD = $(FUZZ_SUITE_LD_COMMON)
 test_fuzz_fuzz_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS) $(RUNTIME_LDFLAGS)
@@ -291,7 +291,7 @@ test_fuzz_fuzz_SOURCES = \
  test/fuzz/rpc.cpp \
  test/fuzz/script.cpp \
  test/fuzz/script_assets_test_minimizer.cpp \
- test/fuzz/script_bitcoin_consensus.cpp \
+ test/fuzz/script_microcurrency_consensus.cpp \
  test/fuzz/script_descriptor_cache.cpp \
  test/fuzz/script_flags.cpp \
  test/fuzz/script_format.cpp \
@@ -322,32 +322,32 @@ test_fuzz_fuzz_SOURCES = \
  test/fuzz/versionbits.cpp
 endif # ENABLE_FUZZ_BINARY
 
-nodist_test_test_bitcoin_SOURCES = $(GENERATED_TEST_FILES)
+nodist_test_test_microcurrency_SOURCES = $(GENERATED_TEST_FILES)
 
-$(BITCOIN_TESTS): $(GENERATED_TEST_FILES)
+$(MICROCURRENCY_TESTS): $(GENERATED_TEST_FILES)
 
-CLEAN_BITCOIN_TEST = test/*.gcda test/*.gcno test/fuzz/*.gcda test/fuzz/*.gcno test/util/*.gcda test/util/*.gcno $(GENERATED_TEST_FILES) $(BITCOIN_TESTS:=.log)
+CLEAN_MICROCURRENCY_TEST = test/*.gcda test/*.gcno test/fuzz/*.gcda test/fuzz/*.gcno test/util/*.gcda test/util/*.gcno $(GENERATED_TEST_FILES) $(MICROCURRENCY_TESTS:=.log)
 
-CLEANFILES += $(CLEAN_BITCOIN_TEST)
+CLEANFILES += $(CLEAN_MICROCURRENCY_TEST)
 
 if TARGET_WINDOWS
-bitcoin_test: $(TEST_BINARY)
+microcurrency_test: $(TEST_BINARY)
 else
 if ENABLE_BENCH
-bitcoin_test: $(TEST_BINARY) $(BENCH_BINARY)
+microcurrency_test: $(TEST_BINARY) $(BENCH_BINARY)
 else
-bitcoin_test: $(TEST_BINARY)
+microcurrency_test: $(TEST_BINARY)
 endif
 endif
 
-bitcoin_test_check: $(TEST_BINARY) FORCE
+microcurrency_test_check: $(TEST_BINARY) FORCE
 	$(MAKE) check-TESTS TESTS=$^
 
-bitcoin_test_clean : FORCE
-	rm -f $(CLEAN_BITCOIN_TEST) $(test_test_bitcoin_OBJECTS) $(TEST_BINARY)
+microcurrency_test_clean : FORCE
+	rm -f $(CLEAN_MICROCURRENCY_TEST) $(test_test_microcurrency_OBJECTS) $(TEST_BINARY)
 
-check-local: $(BITCOIN_TESTS:.cpp=.cpp.test)
-if BUILD_BITCOIN_TX
+check-local: $(MICROCURRENCY_TESTS:.cpp=.cpp.test)
+if BUILD_MICROCURRENCY_TX
 	@echo "Running test/util/test_runner.py..."
 	$(PYTHON) $(top_builddir)/test/util/test_runner.py
 endif
@@ -356,7 +356,7 @@ endif
 if TARGET_WINDOWS
 else
 if ENABLE_BENCH
-	@echo "Running bench/bench_bitcoin ..."
+	@echo "Running bench/bench_microcurrency ..."
 	$(BENCH_BINARY) > /dev/null
 endif
 endif

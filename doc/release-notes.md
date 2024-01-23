@@ -1,4 +1,4 @@
-*After branching off for a major version release of Bitcoin Core, use this
+*After branching off for a major version release of Microcurrency Core, use this
 template to create the initial release notes draft.*
 
 *The release notes draft is a temporary file that can be added to by anyone. See
@@ -8,47 +8,47 @@ for the process.*
 *Create the draft, named* "*version* Release Notes Draft"
 *(e.g. "22.0 Release Notes Draft"), as a collaborative wiki in:*
 
-https://github.com/bitcoin-core/bitcoin-devwiki/wiki/
+https://github.com/microcurrency-core/microcurrency-devwiki/wiki/
 
 *Before the final release, move the notes back to this git repository.*
 
 *version* Release Notes Draft
 ===============================
 
-Bitcoin Core version *version* is now available from:
+Microcurrency Core version *version* is now available from:
 
-  <https://bitcoincore.org/bin/bitcoin-core-*version*/>
+  <https://microcurrencycore.org/bin/microcurrency-core-*version*/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoin/bitcoin/issues>
+  <https://github.com/satoshiware/microcurrency/issues>
 
 To receive security and update notifications, please subscribe to:
 
-  <https://bitcoincore.org/en/list/announcements/join/>
+  <https://microcurrencycore.org/en/list/announcements/join/>
 
 How to Upgrade
 ==============
 
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
-installer (on Windows) or just copy over `/Applications/Bitcoin-Qt` (on Mac)
-or `bitcoind`/`bitcoin-qt` (on Linux).
+installer (on Windows) or just copy over `/Applications/Microcurrency-Qt` (on Mac)
+or `microcurrencyd`/`microcurrency-qt` (on Linux).
 
-Upgrading directly from a version of Bitcoin Core that has reached its EOL is
+Upgrading directly from a version of Microcurrency Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
-wallet versions of Bitcoin Core are generally supported.
+wallet versions of Microcurrency Core are generally supported.
 
 Compatibility
 ==============
 
-Bitcoin Core is supported and extensively tested on operating systems
-using the Linux kernel, macOS 10.15+, and Windows 7 and newer.  Bitcoin
+Microcurrency Core is supported and extensively tested on operating systems
+using the Linux kernel, macOS 10.15+, and Windows 7 and newer.  Microcurrency
 Core should also work on most other Unix-like systems but is not as
-frequently tested on them.  It is not recommended to use Bitcoin Core on
+frequently tested on them.  It is not recommended to use Microcurrency Core on
 unsupported systems.
 
 Notable changes
@@ -57,7 +57,7 @@ Notable changes
 P2P and network changes
 -----------------------
 
-- A bitcoind node will no longer rumour addresses to inbound peers by default.
+- A microcurrencyd node will no longer rumour addresses to inbound peers by default.
   They will become eligible for address gossip after sending an ADDR, ADDRV2,
   or GETADDR message. (#21528)
 
@@ -106,7 +106,7 @@ Updated RPCs
   `-deprecated=fees` if needed in this version). The same fee fields can be accessed
   through the `fees` object in the result. WARNING: deprecated
   fields `ancestorfees` and `descendantfees` are denominated in sats, whereas all
-  fields in the `fees` object are denominated in BTC. (#22689)
+  fields in the `fees` object are denominated in MCU. (#22689)
 
 - Both `createmultisig` and `addmultisigaddress` now include a `warnings`
   field, which will show a warning if a non-legacy address type is requested
@@ -131,7 +131,7 @@ Files
 -----
 
 * On startup, the list of banned hosts and networks (via `setban` RPC) in
-  `banlist.dat` is ignored and only `banlist.json` is considered. Bitcoin Core
+  `banlist.dat` is ignored and only `banlist.json` is considered. Microcurrency Core
   version 22.x is the only version that can read `banlist.dat` and also write
   it to `banlist.json`. If `banlist.json` already exists, version 22.x will not
   try to translate the `banlist.dat` into json. After an upgrade, `listbanned`
@@ -166,7 +166,7 @@ Tools and Utilities
 
 - CLI `-addrinfo` now returns a single field for the number of `onion` addresses
   known to the node instead of separate `torv2` and `torv3` fields, as support
-  for Tor V2 addresses was removed from Bitcoin Core in 22.0. (#22544)
+  for Tor V2 addresses was removed from Microcurrency Core in 22.0. (#22544)
 
 Wallet
 ------
@@ -229,4 +229,4 @@ Thanks to everyone who directly contributed to this release:
 
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoin/bitcoin/).
+[Transifex](https://www.transifex.com/satoshiware/microcurrency/).

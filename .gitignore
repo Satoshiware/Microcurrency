@@ -2,17 +2,17 @@
 
 *.exe
 *.pdb
-src/bitcoin
-src/bitcoind
-src/bitcoin-cli
-src/bitcoin-gui
-src/bitcoin-node
-src/bitcoin-tx
-src/bitcoin-util
-src/bitcoin-wallet
+src/microcurrency
+src/microcurrencyd
+src/microcurrency-cli
+src/microcurrency-gui
+src/microcurrency-node
+src/microcurrency-tx
+src/microcurrency-util
+src/microcurrency-wallet
 src/test/fuzz/fuzz
-src/test/test_bitcoin
-src/qt/test/test_bitcoin-qt
+src/test/test_microcurrency
+src/qt/test/test_microcurrency-qt
 
 # autoreconf
 Makefile.in
@@ -36,8 +36,8 @@ config.log
 config.status
 configure
 libtool
-src/config/bitcoin-config.h
-src/config/bitcoin-config.h.in
+src/config/microcurrency-config.h
+src/config/microcurrency-config.h.in
 src/config/stamp-h1
 src/obj
 share/setup.nsi
@@ -51,11 +51,11 @@ src/qt/forms/ui_*.h
 
 src/qt/test/moc*.cpp
 
-src/qt/bitcoin-qt.config
-src/qt/bitcoin-qt.creator
-src/qt/bitcoin-qt.creator.user
-src/qt/bitcoin-qt.files
-src/qt/bitcoin-qt.includes
+src/qt/microcurrency-qt.config
+src/qt/microcurrency-qt.creator
+src/qt/microcurrency-qt.creator.user
+src/qt/microcurrency-qt.files
+src/qt/microcurrency-qt.includes
 
 .deps
 .dirstamp
@@ -94,15 +94,15 @@ src/qt/bitcoin-qt.includes
 *.qm
 Makefile
 !depends/Makefile
-src/qt/bitcoin-qt
-Bitcoin-Qt.app
+src/qt/microcurrency-qt
+Microcurrency-Qt.app
 
 # Qt Creator
 Makefile.am.user
 
 # Unit-tests
 Makefile.test
-bitcoin-qt_test
+microcurrency-qt_test
 
 # Resources cpp
 qrc_*.cpp
@@ -118,7 +118,7 @@ releases
 *.gcno
 *.gcda
 /*.info
-test_bitcoin.coverage/
+test_microcurrency.coverage/
 total.coverage/
 fuzz.coverage/
 coverage_percent.txt
@@ -137,7 +137,7 @@ test/.mypy_cache/
 
 /doc/doxygen/
 
-libbitcoinconsensus.pc
+libmicrocurrencyconsensus.pc
 contrib/devtools/split-debug.sh
 
 # Output from running db4 installation

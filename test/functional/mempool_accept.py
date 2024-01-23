@@ -8,7 +8,7 @@ from copy import deepcopy
 from decimal import Decimal
 import math
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import MicrocurrencyTestFramework
 from test_framework.key import ECKey
 from test_framework.messages import (
     BIP125_SEQUENCE_NUMBER,
@@ -38,7 +38,7 @@ from test_framework.util import (
 from test_framework.wallet import MiniWallet
 
 
-class MempoolAcceptanceTest(BitcoinTestFramework):
+class MempoolAcceptanceTest(MicrocurrencyTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.extra_args = [[
@@ -86,7 +86,7 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
 
         self.log.info('A transaction not in the mempool')
         fee = Decimal('0.000007')
-        utxo_to_spend = self.wallet.get_utxo(txid=txid_in_block)  # use 0.3 BTC UTXO
+        utxo_to_spend = self.wallet.get_utxo(txid=txid_in_block)  # use 0.3 MCU UTXO
         tx = self.wallet.create_self_transfer(utxo_to_spend=utxo_to_spend, sequence=BIP125_SEQUENCE_NUMBER)['tx']
         tx.vout[0].nValue = int((Decimal('0.3') - fee) * COIN)
         raw_tx_0 = tx.serialize().hex()

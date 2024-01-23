@@ -47,7 +47,7 @@
 #include <warnings.h>
 
 #if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
+#include <config/microcurrency-config.h>
 #endif
 
 #include <any>

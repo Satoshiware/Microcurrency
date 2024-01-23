@@ -1,36 +1,36 @@
 #!/usr/bin/env bash
 #
-#  bitcoind The bitcoin core server.
+#  microcurrencyd The microcurrency core server.
 #
 #
 # chkconfig: 345 80 20
-# description: bitcoind
-# processname: bitcoind
+# description: microcurrencyd
+# processname: microcurrencyd
 #
 
 # Source function library.
 . /etc/init.d/functions
 
-# you can override defaults in /etc/sysconfig/bitcoind, see below
-if [ -f /etc/sysconfig/bitcoind ]; then
-        . /etc/sysconfig/bitcoind
+# you can override defaults in /etc/sysconfig/microcurrencyd, see below
+if [ -f /etc/sysconfig/microcurrencyd ]; then
+        . /etc/sysconfig/microcurrencyd
 fi
 
 RETVAL=0
 
-prog=bitcoind
-# you can override the lockfile via BITCOIND_LOCKFILE in /etc/sysconfig/bitcoind
-lockfile=${BITCOIND_LOCKFILE-/var/lock/subsys/bitcoind}
+prog=microcurrencyd
+# you can override the lockfile via MICROCURRENCYD_LOCKFILE in /etc/sysconfig/microcurrencyd
+lockfile=${MICROCURRENCYD_LOCKFILE-/var/lock/subsys/microcurrencyd}
 
-# bitcoind defaults to /usr/bin/bitcoind, override with BITCOIND_BIN
-bitcoind=${BITCOIND_BIN-/usr/bin/bitcoind}
+# microcurrencyd defaults to /usr/bin/microcurrencyd, override with MICROCURRENCYD_BIN
+microcurrencyd=${MICROCURRENCYD_BIN-/usr/bin/microcurrencyd}
 
-# bitcoind opts default to -disablewallet, override with BITCOIND_OPTS
-bitcoind_opts=${BITCOIND_OPTS--disablewallet}
+# microcurrencyd opts default to -disablewallet, override with MICROCURRENCYD_OPTS
+microcurrencyd_opts=${MICROCURRENCYD_OPTS--disablewallet}
 
 start() {
     echo -n $"Starting $prog: "
-    daemon $DAEMONOPTS $bitcoind $bitcoind_opts
+    daemon $DAEMONOPTS $microcurrencyd $microcurrencyd_opts
     RETVAL=$?
     echo
     [ $RETVAL -eq 0 ] && touch $lockfile

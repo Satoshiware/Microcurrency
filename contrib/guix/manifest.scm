@@ -145,14 +145,14 @@ chain for " target " development."))
     xglibc "libc_cv_ssp" "no")
    "libc_cv_ssp_strong" "no"))
 
-(define* (make-bitcoin-cross-toolchain target
+(define* (make-microcurrency-cross-toolchain target
                                        #:key
                                        (base-gcc-for-libc gcc-7)
                                        (base-kernel-headers linux-libre-headers-4.9)
                                        (base-libc (make-glibc-without-ssp glibc-2.24))
                                        (base-gcc (make-gcc-rpath-link base-gcc)))
   "Convenience wrapper around MAKE-CROSS-TOOLCHAIN with default values
-desirable for building Bitcoin Core release binaries."
+desirable for building Microcurrency Core release binaries."
   (make-cross-toolchain target
                         base-gcc-for-libc
                         base-kernel-headers
@@ -545,7 +545,7 @@ inspecting signatures in Mach-O binaries.")
                                            "glibc-2.24-elfm-loadaddr-dynamic-rewrite.patch"
                                            "glibc-2.24-no-build-time-cxx-header-run.patch"))))))
 
-(define-public glibc-2.27/bitcoin-patched
+(define-public glibc-2.27/microcurrency-patched
   (package
     (inherit glibc-2.31)
     (version "2.27")
@@ -611,11 +611,11 @@ inspecting signatures in Mach-O binaries.")
                  osslsigncode))
           ((string-contains target "-linux-")
            (list (cond ((string-contains target "riscv64-")
-                        (make-bitcoin-cross-toolchain target
-                                                      #:base-libc glibc-2.27/bitcoin-patched
+                        (make-microcurrency-cross-toolchain target
+                                                      #:base-libc glibc-2.27/microcurrency-patched
                                                       #:base-kernel-headers linux-libre-headers-4.19))
                        (else
-                        (make-bitcoin-cross-toolchain target)))))
+                        (make-microcurrency-cross-toolchain target)))))
           ((string-contains target "darwin")
            (list clang-toolchain-10 binutils cmake xorriso python-signapple))
           (else '())))))

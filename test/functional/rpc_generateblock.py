@@ -5,7 +5,7 @@
 '''Test generateblock rpc.
 '''
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import MicrocurrencyTestFramework
 from test_framework.wallet import MiniWallet
 from test_framework.util import (
     assert_equal,
@@ -13,7 +13,7 @@ from test_framework.util import (
 )
 
 
-class GenerateBlockTest(BitcoinTestFramework):
+class GenerateBlockTest(MicrocurrencyTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
 

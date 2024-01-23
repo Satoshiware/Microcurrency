@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TIMEDATA_H
-#define BITCOIN_TIMEDATA_H
+#ifndef MICROCURRENCY_TIMEDATA_H
+#define MICROCURRENCY_TIMEDATA_H
 
 #include <algorithm>
 #include <assert.h>
@@ -80,4 +80,4 @@ void AddTimeData(const CNetAddr& ip, int64_t nTime);
  */
 void TestOnlyResetTimeData();
 
-#endif // BITCOIN_TIMEDATA_H
+#endif // MICROCURRENCY_TIMEDATA_H

@@ -22,7 +22,7 @@ from test_framework.p2p import (
     msg_getdata,
     p2p_lock,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import MicrocurrencyTestFramework
 from test_framework.util import (
     assert_equal,
 )
@@ -62,12 +62,12 @@ def custom_function():
 
     If this function is more generally useful for other tests, consider
     moving it to a module in test_framework."""
-    # self.log.info("running custom_function")  # Oops! Can't run self.log outside the BitcoinTestFramework
+    # self.log.info("running custom_function")  # Oops! Can't run self.log outside the MicrocurrencyTestFramework
     pass
 
 
-class ExampleTest(BitcoinTestFramework):
-    # Each functional test is a subclass of the BitcoinTestFramework class.
+class ExampleTest(MicrocurrencyTestFramework):
+    # Each functional test is a subclass of the MicrocurrencyTestFramework class.
 
     # Override the set_test_params(), skip_test_if_missing_module(), add_options(), setup_chain(), setup_network()
     # and setup_nodes() methods to customize the test setup as required.
@@ -130,7 +130,7 @@ class ExampleTest(BitcoinTestFramework):
 
         Define it in a method here because you're going to use it repeatedly.
         If you think it's useful in general, consider moving it to the base
-        BitcoinTestFramework class so other tests can use it."""
+        MicrocurrencyTestFramework class so other tests can use it."""
 
         self.log.info("Running custom_method")
 

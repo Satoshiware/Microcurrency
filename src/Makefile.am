@@ -15,44 +15,44 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 PTHREAD_FLAGS = $(PTHREAD_CFLAGS) $(PTHREAD_LIBS)
 EXTRA_LIBRARIES =
 
-BITCOIN_INCLUDES=-I$(builddir) -I$(srcdir)/$(MINISKETCH_INCLUDE_DIR_INT) -I$(srcdir)/secp256k1/include -I$(srcdir)/$(UNIVALUE_INCLUDE_DIR_INT) $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS)
+MICROCURRENCY_INCLUDES=-I$(builddir) -I$(srcdir)/$(MINISKETCH_INCLUDE_DIR_INT) -I$(srcdir)/secp256k1/include -I$(srcdir)/$(UNIVALUE_INCLUDE_DIR_INT) $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS)
 
-LIBBITCOIN_NODE=libbitcoin_node.a
-LIBBITCOIN_COMMON=libbitcoin_common.a
-LIBBITCOIN_CONSENSUS=libbitcoin_consensus.a
-LIBBITCOIN_CLI=libbitcoin_cli.a
-LIBBITCOIN_UTIL=libbitcoin_util.a
-LIBBITCOIN_CRYPTO_BASE=crypto/libbitcoin_crypto_base.a
-LIBBITCOINQT=qt/libbitcoinqt.a
+LIBMICROCURRENCY_NODE=libmicrocurrency_node.a
+LIBMICROCURRENCY_COMMON=libmicrocurrency_common.a
+LIBMICROCURRENCY_CONSENSUS=libmicrocurrency_consensus.a
+LIBMICROCURRENCY_CLI=libmicrocurrency_cli.a
+LIBMICROCURRENCY_UTIL=libmicrocurrency_util.a
+LIBMICROCURRENCY_CRYPTO_BASE=crypto/libmicrocurrency_crypto_base.a
+LIBMICROCURRENCYQT=qt/libmicrocurrencyqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
 
 if ENABLE_ZMQ
-LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+LIBMICROCURRENCY_ZMQ=libmicrocurrency_zmq.a
 endif
-if BUILD_BITCOIN_LIBS
-LIBBITCOINCONSENSUS=libbitcoinconsensus.la
+if BUILD_MICROCURRENCY_LIBS
+LIBMICROCURRENCYCONSENSUS=libmicrocurrencyconsensus.la
 endif
 if ENABLE_WALLET
-LIBBITCOIN_WALLET=libbitcoin_wallet.a
-LIBBITCOIN_WALLET_TOOL=libbitcoin_wallet_tool.a
+LIBMICROCURRENCY_WALLET=libmicrocurrency_wallet.a
+LIBMICROCURRENCY_WALLET_TOOL=libmicrocurrency_wallet_tool.a
 endif
 
-LIBBITCOIN_CRYPTO= $(LIBBITCOIN_CRYPTO_BASE)
+LIBMICROCURRENCY_CRYPTO= $(LIBMICROCURRENCY_CRYPTO_BASE)
 if ENABLE_SSE41
-LIBBITCOIN_CRYPTO_SSE41 = crypto/libbitcoin_crypto_sse41.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SSE41)
+LIBMICROCURRENCY_CRYPTO_SSE41 = crypto/libmicrocurrency_crypto_sse41.a
+LIBMICROCURRENCY_CRYPTO += $(LIBMICROCURRENCY_CRYPTO_SSE41)
 endif
 if ENABLE_AVX2
-LIBBITCOIN_CRYPTO_AVX2 = crypto/libbitcoin_crypto_avx2.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_AVX2)
+LIBMICROCURRENCY_CRYPTO_AVX2 = crypto/libmicrocurrency_crypto_avx2.a
+LIBMICROCURRENCY_CRYPTO += $(LIBMICROCURRENCY_CRYPTO_AVX2)
 endif
 if ENABLE_X86_SHANI
-LIBBITCOIN_CRYPTO_X86_SHANI = crypto/libbitcoin_crypto_x86_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_X86_SHANI)
+LIBMICROCURRENCY_CRYPTO_X86_SHANI = crypto/libmicrocurrency_crypto_x86_shani.a
+LIBMICROCURRENCY_CRYPTO += $(LIBMICROCURRENCY_CRYPTO_X86_SHANI)
 endif
 if ENABLE_ARM_SHANI
-LIBBITCOIN_CRYPTO_ARM_SHANI = crypto/libbitcoin_crypto_arm_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARM_SHANI)
+LIBMICROCURRENCY_CRYPTO_ARM_SHANI = crypto/libmicrocurrency_crypto_arm_shani.a
+LIBMICROCURRENCY_CRYPTO += $(LIBMICROCURRENCY_CRYPTO_ARM_SHANI)
 endif
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*.h) $(wildcard secp256k1/src/*.c) $(wildcard secp256k1/include/*)
@@ -61,18 +61,18 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*.h) $(wildcard secp256k1/src/*.c) $(w
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
 EXTRA_LIBRARIES += \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_NODE) \
-  $(LIBBITCOIN_CLI) \
-  $(LIBBITCOIN_IPC) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_WALLET_TOOL) \
-  $(LIBBITCOIN_ZMQ)
+  $(LIBMICROCURRENCY_CRYPTO) \
+  $(LIBMICROCURRENCY_UTIL) \
+  $(LIBMICROCURRENCY_COMMON) \
+  $(LIBMICROCURRENCY_CONSENSUS) \
+  $(LIBMICROCURRENCY_NODE) \
+  $(LIBMICROCURRENCY_CLI) \
+  $(LIBMICROCURRENCY_IPC) \
+  $(LIBMICROCURRENCY_WALLET) \
+  $(LIBMICROCURRENCY_WALLET_TOOL) \
+  $(LIBMICROCURRENCY_ZMQ)
 
-lib_LTLIBRARIES = $(LIBBITCOINCONSENSUS)
+lib_LTLIBRARIES = $(LIBMICROCURRENCYCONSENSUS)
 noinst_LTLIBRARIES =
 
 bin_PROGRAMS =
@@ -80,35 +80,35 @@ noinst_PROGRAMS =
 TESTS =
 BENCHMARKS =
 
-if BUILD_BITCOIND
-  bin_PROGRAMS += bitcoind
+if BUILD_MICROCURRENCYD
+  bin_PROGRAMS += microcurrencyd
 endif
 
-if BUILD_BITCOIN_NODE
-  bin_PROGRAMS += bitcoin-node
+if BUILD_MICROCURRENCY_NODE
+  bin_PROGRAMS += microcurrency-node
 endif
 
-if BUILD_BITCOIN_CLI
-  bin_PROGRAMS += bitcoin-cli
+if BUILD_MICROCURRENCY_CLI
+  bin_PROGRAMS += microcurrency-cli
 endif
 
-if BUILD_BITCOIN_TX
-  bin_PROGRAMS += bitcoin-tx
+if BUILD_MICROCURRENCY_TX
+  bin_PROGRAMS += microcurrency-tx
 endif
 
 if ENABLE_WALLET
-if BUILD_BITCOIN_WALLET
-  bin_PROGRAMS += bitcoin-wallet
+if BUILD_MICROCURRENCY_WALLET
+  bin_PROGRAMS += microcurrency-wallet
 endif
 endif
 
-if BUILD_BITCOIN_UTIL
-  bin_PROGRAMS += bitcoin-util
+if BUILD_MICROCURRENCY_UTIL
+  bin_PROGRAMS += microcurrency-util
 endif
 
 .PHONY: FORCE check-symbols check-security
-# bitcoin core #
-BITCOIN_CORE_H = \
+# microcurrency core #
+MICROCURRENCY_CORE_H = \
   addrdb.h \
   addrman.h \
   addrman_impl.h \
@@ -314,17 +314,17 @@ obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh "$(abs_top_builddir)/src/obj/build.h" \
 	  "$(abs_top_srcdir)"
-libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
+libmicrocurrency_util_a-clientversion.$(OBJEXT): obj/build.h
 
-ipc/capnp/libbitcoin_ipc_a-ipc.$(OBJEXT): $(libbitcoin_ipc_mpgen_input:=.h)
+ipc/capnp/libmicrocurrency_ipc_a-ipc.$(OBJEXT): $(libmicrocurrency_ipc_mpgen_input:=.h)
 
-# server: shared between bitcoind and bitcoin-qt
+# server: shared between microcurrencyd and microcurrency-qt
 # Contains code accessing mempool and chain state that is meant to be separated
 # from wallet and gui code (see node/README.md). Shared code should go in
-# libbitcoin_common or libbitcoin_util libraries, instead.
-libbitcoin_node_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(NATPMP_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
-libbitcoin_node_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_node_a_SOURCES = \
+# libmicrocurrency_common or libmicrocurrency_util libraries, instead.
+libmicrocurrency_node_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(NATPMP_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libmicrocurrency_node_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_node_a_SOURCES = \
   addrdb.cpp \
   addrman.cpp \
   banman.cpp \
@@ -384,19 +384,19 @@ libbitcoin_node_a_SOURCES = \
   validation.cpp \
   validationinterface.cpp \
   versionbits.cpp \
-  $(BITCOIN_CORE_H)
+  $(MICROCURRENCY_CORE_H)
 
 if ENABLE_WALLET
-libbitcoin_node_a_SOURCES += wallet/init.cpp
+libmicrocurrency_node_a_SOURCES += wallet/init.cpp
 endif
 if !ENABLE_WALLET
-libbitcoin_node_a_SOURCES += dummywallet.cpp
+libmicrocurrency_node_a_SOURCES += dummywallet.cpp
 endif
 
 if ENABLE_ZMQ
-libbitcoin_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
-libbitcoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_zmq_a_SOURCES = \
+libmicrocurrency_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES) $(ZMQ_CFLAGS)
+libmicrocurrency_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_zmq_a_SOURCES = \
   zmq/zmqabstractnotifier.cpp \
   zmq/zmqnotificationinterface.cpp \
   zmq/zmqpublishnotifier.cpp \
@@ -405,11 +405,11 @@ libbitcoin_zmq_a_SOURCES = \
 endif
 
 
-# wallet: shared between bitcoind and bitcoin-qt, but only linked
+# wallet: shared between microcurrencyd and microcurrency-qt, but only linked
 # when wallet enabled
-libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(SQLITE_CFLAGS)
-libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_wallet_a_SOURCES = \
+libmicrocurrency_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES) $(SQLITE_CFLAGS)
+libmicrocurrency_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_wallet_a_SOURCES = \
   wallet/coincontrol.cpp \
   wallet/context.cpp \
   wallet/crypter.cpp \
@@ -437,25 +437,25 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/walletdb.cpp \
   wallet/walletutil.cpp \
   wallet/coinselection.cpp \
-  $(BITCOIN_CORE_H)
+  $(MICROCURRENCY_CORE_H)
 
 if USE_SQLITE
-libbitcoin_wallet_a_SOURCES += wallet/sqlite.cpp
+libmicrocurrency_wallet_a_SOURCES += wallet/sqlite.cpp
 endif
 if USE_BDB
-libbitcoin_wallet_a_SOURCES += wallet/bdb.cpp wallet/salvage.cpp
+libmicrocurrency_wallet_a_SOURCES += wallet/bdb.cpp wallet/salvage.cpp
 endif
 
-libbitcoin_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_wallet_tool_a_SOURCES = \
+libmicrocurrency_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+libmicrocurrency_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_wallet_tool_a_SOURCES = \
   wallet/wallettool.cpp \
-  $(BITCOIN_CORE_H)
+  $(MICROCURRENCY_CORE_H)
 
 # crypto primitives library
-crypto_libbitcoin_crypto_base_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_base_a_SOURCES = \
+crypto_libmicrocurrency_crypto_base_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libmicrocurrency_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libmicrocurrency_crypto_base_a_SOURCES = \
   crypto/aes.cpp \
   crypto/aes.h \
   crypto/chacha_poly_aead.h \
@@ -487,37 +487,37 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/siphash.h
 
 if USE_ASM
-crypto_libbitcoin_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
+crypto_libmicrocurrency_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
 endif
 
-crypto_libbitcoin_crypto_sse41_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
-crypto_libbitcoin_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
-crypto_libbitcoin_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
+crypto_libmicrocurrency_crypto_sse41_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libmicrocurrency_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libmicrocurrency_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
+crypto_libmicrocurrency_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
+crypto_libmicrocurrency_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
 
-crypto_libbitcoin_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
-crypto_libbitcoin_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
-crypto_libbitcoin_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
+crypto_libmicrocurrency_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libmicrocurrency_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libmicrocurrency_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
+crypto_libmicrocurrency_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
+crypto_libmicrocurrency_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
 
-crypto_libbitcoin_crypto_x86_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CXXFLAGS += $(X86_SHANI_CXXFLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CPPFLAGS += -DENABLE_X86_SHANI
-crypto_libbitcoin_crypto_x86_shani_a_SOURCES = crypto/sha256_x86_shani.cpp
+crypto_libmicrocurrency_crypto_x86_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libmicrocurrency_crypto_x86_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libmicrocurrency_crypto_x86_shani_a_CXXFLAGS += $(X86_SHANI_CXXFLAGS)
+crypto_libmicrocurrency_crypto_x86_shani_a_CPPFLAGS += -DENABLE_X86_SHANI
+crypto_libmicrocurrency_crypto_x86_shani_a_SOURCES = crypto/sha256_x86_shani.cpp
 
-crypto_libbitcoin_crypto_arm_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CPPFLAGS += -DENABLE_ARM_SHANI
-crypto_libbitcoin_crypto_arm_shani_a_SOURCES = crypto/sha256_arm_shani.cpp
+crypto_libmicrocurrency_crypto_arm_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libmicrocurrency_crypto_arm_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libmicrocurrency_crypto_arm_shani_a_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
+crypto_libmicrocurrency_crypto_arm_shani_a_CPPFLAGS += -DENABLE_ARM_SHANI
+crypto_libmicrocurrency_crypto_arm_shani_a_SOURCES = crypto/sha256_arm_shani.cpp
 
 # consensus: shared between all executables that validate any consensus rules.
-libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_consensus_a_SOURCES = \
+libmicrocurrency_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+libmicrocurrency_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_consensus_a_SOURCES = \
   arith_uint256.cpp \
   arith_uint256.h \
   consensus/amount.h \
@@ -535,7 +535,7 @@ libbitcoin_consensus_a_SOURCES = \
   primitives/transaction.h \
   pubkey.cpp \
   pubkey.h \
-  script/bitcoinconsensus.cpp \
+  script/microcurrencyconsensus.cpp \
   script/interpreter.cpp \
   script/interpreter.h \
   script/script.cpp \
@@ -551,10 +551,10 @@ libbitcoin_consensus_a_SOURCES = \
   util/strencodings.h \
   version.h
 
-# common: shared between bitcoind, and bitcoin-qt and non-server tools
-libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_common_a_SOURCES = \
+# common: shared between microcurrencyd, and microcurrency-qt and non-server tools
+libmicrocurrency_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+libmicrocurrency_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_common_a_SOURCES = \
   base58.cpp \
   bech32.cpp \
   chainparams.cpp \
@@ -587,14 +587,14 @@ libbitcoin_common_a_SOURCES = \
   script/signingprovider.cpp \
   script/standard.cpp \
   warnings.cpp \
-  $(BITCOIN_CORE_H)
+  $(MICROCURRENCY_CORE_H)
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
 # sanity checks are linked.
-libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_util_a_SOURCES = \
+libmicrocurrency_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+libmicrocurrency_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_util_a_SOURCES = \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
@@ -634,150 +634,150 @@ libbitcoin_util_a_SOURCES = \
   util/syscall_sandbox.cpp \
   util/time.cpp \
   util/tokenpipe.cpp \
-  $(BITCOIN_CORE_H)
+  $(MICROCURRENCY_CORE_H)
 
 if USE_LIBEVENT
-libbitcoin_util_a_SOURCES += util/url.cpp
+libmicrocurrency_util_a_SOURCES += util/url.cpp
 endif
 
-# cli: shared between bitcoin-cli and bitcoin-qt
-libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_cli_a_SOURCES = \
+# cli: shared between microcurrency-cli and microcurrency-qt
+libmicrocurrency_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+libmicrocurrency_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrency_cli_a_SOURCES = \
   compat/stdin.h \
   compat/stdin.cpp \
   rpc/client.cpp \
-  $(BITCOIN_CORE_H)
+  $(MICROCURRENCY_CORE_H)
 
-nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
+nodist_libmicrocurrency_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
-# bitcoind & bitcoin-node binaries #
-bitcoin_daemon_sources = bitcoind.cpp
-bitcoin_bin_cppflags = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-bitcoin_bin_cxxflags = $(AM_CXXFLAGS) $(PIE_FLAGS)
-bitcoin_bin_ldflags = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# microcurrencyd & microcurrency-node binaries #
+microcurrency_daemon_sources = microcurrencyd.cpp
+microcurrency_bin_cppflags = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+microcurrency_bin_cxxflags = $(AM_CXXFLAGS) $(PIE_FLAGS)
+microcurrency_bin_ldflags = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-bitcoin_daemon_sources += bitcoind-res.rc
+microcurrency_daemon_sources += microcurrencyd-res.rc
 endif
 
-bitcoin_bin_ldadd = \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
+microcurrency_bin_ldadd = \
+  $(LIBMICROCURRENCY_WALLET) \
+  $(LIBMICROCURRENCY_COMMON) \
+  $(LIBMICROCURRENCY_UTIL) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_ZMQ) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBMICROCURRENCY_ZMQ) \
+  $(LIBMICROCURRENCY_CONSENSUS) \
+  $(LIBMICROCURRENCY_CRYPTO) \
   $(LIBLEVELDB) \
   $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-bitcoin_bin_ldadd += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(SQLITE_LIBS)
+microcurrency_bin_ldadd += $(BDB_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(SQLITE_LIBS)
 
-bitcoind_SOURCES = $(bitcoin_daemon_sources) init/bitcoind.cpp
-bitcoind_CPPFLAGS = $(bitcoin_bin_cppflags)
-bitcoind_CXXFLAGS = $(bitcoin_bin_cxxflags)
-bitcoind_LDFLAGS = $(bitcoin_bin_ldflags)
-bitcoind_LDADD = $(LIBBITCOIN_NODE) $(bitcoin_bin_ldadd)
+microcurrencyd_SOURCES = $(microcurrency_daemon_sources) init/microcurrencyd.cpp
+microcurrencyd_CPPFLAGS = $(microcurrency_bin_cppflags)
+microcurrencyd_CXXFLAGS = $(microcurrency_bin_cxxflags)
+microcurrencyd_LDFLAGS = $(microcurrency_bin_ldflags)
+microcurrencyd_LDADD = $(LIBMICROCURRENCY_NODE) $(microcurrency_bin_ldadd)
 
-bitcoin_node_SOURCES = $(bitcoin_daemon_sources) init/bitcoin-node.cpp
-bitcoin_node_CPPFLAGS = $(bitcoin_bin_cppflags)
-bitcoin_node_CXXFLAGS = $(bitcoin_bin_cxxflags)
-bitcoin_node_LDFLAGS = $(bitcoin_bin_ldflags)
-bitcoin_node_LDADD = $(LIBBITCOIN_NODE) $(bitcoin_bin_ldadd) $(LIBBITCOIN_IPC) $(LIBMULTIPROCESS_LIBS)
+microcurrency_node_SOURCES = $(microcurrency_daemon_sources) init/microcurrency-node.cpp
+microcurrency_node_CPPFLAGS = $(microcurrency_bin_cppflags)
+microcurrency_node_CXXFLAGS = $(microcurrency_bin_cxxflags)
+microcurrency_node_LDFLAGS = $(microcurrency_bin_ldflags)
+microcurrency_node_LDADD = $(LIBMICROCURRENCY_NODE) $(microcurrency_bin_ldadd) $(LIBMICROCURRENCY_IPC) $(LIBMULTIPROCESS_LIBS)
 
-# bitcoin-cli binary #
-bitcoin_cli_SOURCES = bitcoin-cli.cpp
-bitcoin_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
-bitcoin_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-bitcoin_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# microcurrency-cli binary #
+microcurrency_cli_SOURCES = microcurrency-cli.cpp
+microcurrency_cli_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES) $(EVENT_CFLAGS)
+microcurrency_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+microcurrency_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-bitcoin_cli_SOURCES += bitcoin-cli-res.rc
+microcurrency_cli_SOURCES += microcurrency-cli-res.rc
 endif
 
-bitcoin_cli_LDADD = \
-  $(LIBBITCOIN_CLI) \
+microcurrency_cli_LDADD = \
+  $(LIBMICROCURRENCY_CLI) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO)
+  $(LIBMICROCURRENCY_UTIL) \
+  $(LIBMICROCURRENCY_CRYPTO)
 
-bitcoin_cli_LDADD += $(EVENT_LIBS)
+microcurrency_cli_LDADD += $(EVENT_LIBS)
 #
 
-# bitcoin-tx binary #
-bitcoin_tx_SOURCES = bitcoin-tx.cpp
-bitcoin_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-bitcoin_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-bitcoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# microcurrency-tx binary #
+microcurrency_tx_SOURCES = microcurrency-tx.cpp
+microcurrency_tx_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+microcurrency_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+microcurrency_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-bitcoin_tx_SOURCES += bitcoin-tx-res.rc
+microcurrency_tx_SOURCES += microcurrency-tx-res.rc
 endif
 
-bitcoin_tx_LDADD = \
+microcurrency_tx_LDADD = \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBMICROCURRENCY_COMMON) \
+  $(LIBMICROCURRENCY_UTIL) \
+  $(LIBMICROCURRENCY_CONSENSUS) \
+  $(LIBMICROCURRENCY_CRYPTO) \
   $(LIBSECP256K1)
 #
 
-# bitcoin-wallet binary #
-bitcoin_wallet_SOURCES = bitcoin-wallet.cpp
-bitcoin_wallet_SOURCES += init/bitcoin-wallet.cpp
-bitcoin_wallet_CPPFLAGS = $(bitcoin_bin_cppflags)
-bitcoin_wallet_CXXFLAGS = $(bitcoin_bin_cxxflags)
-bitcoin_wallet_LDFLAGS = $(bitcoin_bin_ldflags)
-bitcoin_wallet_LDADD = \
-  $(LIBBITCOIN_WALLET_TOOL) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
+# microcurrency-wallet binary #
+microcurrency_wallet_SOURCES = microcurrency-wallet.cpp
+microcurrency_wallet_SOURCES += init/microcurrency-wallet.cpp
+microcurrency_wallet_CPPFLAGS = $(microcurrency_bin_cppflags)
+microcurrency_wallet_CXXFLAGS = $(microcurrency_bin_cxxflags)
+microcurrency_wallet_LDFLAGS = $(microcurrency_bin_ldflags)
+microcurrency_wallet_LDADD = \
+  $(LIBMICROCURRENCY_WALLET_TOOL) \
+  $(LIBMICROCURRENCY_WALLET) \
+  $(LIBMICROCURRENCY_COMMON) \
+  $(LIBMICROCURRENCY_UTIL) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBMICROCURRENCY_CONSENSUS) \
+  $(LIBMICROCURRENCY_CRYPTO) \
   $(LIBSECP256K1) \
   $(BDB_LIBS) \
   $(SQLITE_LIBS)
 
 if TARGET_WINDOWS
-bitcoin_wallet_SOURCES += bitcoin-wallet-res.rc
+microcurrency_wallet_SOURCES += microcurrency-wallet-res.rc
 endif
 #
 
-# bitcoin-util binary #
-bitcoin_util_SOURCES = bitcoin-util.cpp
-bitcoin_util_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-bitcoin_util_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-bitcoin_util_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# microcurrency-util binary #
+microcurrency_util_SOURCES = microcurrency-util.cpp
+microcurrency_util_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+microcurrency_util_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+microcurrency_util_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-bitcoin_util_SOURCES += bitcoin-util-res.rc
+microcurrency_util_SOURCES += microcurrency-util-res.rc
 endif
 
-bitcoin_util_LDADD = \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
+microcurrency_util_LDADD = \
+  $(LIBMICROCURRENCY_COMMON) \
+  $(LIBMICROCURRENCY_UTIL) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBMICROCURRENCY_CONSENSUS) \
+  $(LIBMICROCURRENCY_CRYPTO) \
   $(LIBSECP256K1)
 #
 
-# bitcoinconsensus library #
-if BUILD_BITCOIN_LIBS
-include_HEADERS = script/bitcoinconsensus.h
-libbitcoinconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libbitcoin_crypto_base_a_SOURCES) $(libbitcoin_consensus_a_SOURCES)
+# microcurrencyconsensus library #
+if BUILD_MICROCURRENCY_LIBS
+include_HEADERS = script/microcurrencyconsensus.h
+libmicrocurrencyconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libmicrocurrency_crypto_base_a_SOURCES) $(libmicrocurrency_consensus_a_SOURCES)
 
-libbitcoinconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libbitcoinconsensus_la_LIBADD = $(LIBSECP256K1)
-libbitcoinconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
-libbitcoinconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libmicrocurrencyconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
+libmicrocurrencyconsensus_la_LIBADD = $(LIBSECP256K1)
+libmicrocurrencyconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_MICROCURRENCY_INTERNAL
+libmicrocurrencyconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif
 #
@@ -813,12 +813,12 @@ CLEANFILES += obj/build.h
 EXTRA_DIST = $(CTAES_DIST)
 
 
-config/bitcoin-config.h: config/stamp-h1
+config/microcurrency-config.h: config/stamp-h1
 	@$(MAKE) -C $(top_builddir) $(subdir)/$(@)
-config/stamp-h1: $(top_srcdir)/$(subdir)/config/bitcoin-config.h.in $(top_builddir)/config.status
+config/stamp-h1: $(top_srcdir)/$(subdir)/config/microcurrency-config.h.in $(top_builddir)/config.status
 	$(AM_V_at)$(MAKE) -C $(top_builddir) $(subdir)/$(@)
-$(top_srcdir)/$(subdir)/config/bitcoin-config.h.in:  $(am__configure_deps)
-	$(AM_V_at)$(MAKE) -C $(top_srcdir) $(subdir)/config/bitcoin-config.h.in
+$(top_srcdir)/$(subdir)/config/microcurrency-config.h.in:  $(am__configure_deps)
+	$(AM_V_at)$(MAKE) -C $(top_srcdir) $(subdir)/config/microcurrency-config.h.in
 
 clean-local:
 	-$(MAKE) -C secp256k1 clean
@@ -841,15 +841,15 @@ if HARDEN
 	$(AM_V_at) $(PYTHON) $(top_srcdir)/contrib/devtools/security-check.py $(bin_PROGRAMS)
 endif
 
-libbitcoin_ipc_mpgen_input = \
+libmicrocurrency_ipc_mpgen_input = \
   ipc/capnp/echo.capnp \
   ipc/capnp/init.capnp
-EXTRA_DIST += $(libbitcoin_ipc_mpgen_input)
+EXTRA_DIST += $(libmicrocurrency_ipc_mpgen_input)
 %.capnp:
 
 if BUILD_MULTIPROCESS
-LIBBITCOIN_IPC=libbitcoin_ipc.a
-libbitcoin_ipc_a_SOURCES = \
+LIBMICROCURRENCY_IPC=libmicrocurrency_ipc.a
+libmicrocurrency_ipc_a_SOURCES = \
   ipc/capnp/context.h \
   ipc/capnp/init-types.h \
   ipc/capnp/protocol.cpp \
@@ -860,20 +860,20 @@ libbitcoin_ipc_a_SOURCES = \
   ipc/process.cpp \
   ipc/process.h \
   ipc/protocol.h
-libbitcoin_ipc_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_ipc_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(LIBMULTIPROCESS_CFLAGS)
+libmicrocurrency_ipc_a_CPPFLAGS = $(AM_CPPFLAGS) $(MICROCURRENCY_INCLUDES)
+libmicrocurrency_ipc_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(LIBMULTIPROCESS_CFLAGS)
 
 include $(MPGEN_PREFIX)/include/mpgen.mk
-libbitcoin_ipc_mpgen_output = \
-  $(libbitcoin_ipc_mpgen_input:=.c++) \
-  $(libbitcoin_ipc_mpgen_input:=.h) \
-  $(libbitcoin_ipc_mpgen_input:=.proxy-client.c++) \
-  $(libbitcoin_ipc_mpgen_input:=.proxy-server.c++) \
-  $(libbitcoin_ipc_mpgen_input:=.proxy-types.c++) \
-  $(libbitcoin_ipc_mpgen_input:=.proxy-types.h) \
-  $(libbitcoin_ipc_mpgen_input:=.proxy.h)
-nodist_libbitcoin_ipc_a_SOURCES = $(libbitcoin_ipc_mpgen_output)
-CLEANFILES += $(libbitcoin_ipc_mpgen_output)
+libmicrocurrency_ipc_mpgen_output = \
+  $(libmicrocurrency_ipc_mpgen_input:=.c++) \
+  $(libmicrocurrency_ipc_mpgen_input:=.h) \
+  $(libmicrocurrency_ipc_mpgen_input:=.proxy-client.c++) \
+  $(libmicrocurrency_ipc_mpgen_input:=.proxy-server.c++) \
+  $(libmicrocurrency_ipc_mpgen_input:=.proxy-types.c++) \
+  $(libmicrocurrency_ipc_mpgen_input:=.proxy-types.h) \
+  $(libmicrocurrency_ipc_mpgen_input:=.proxy.h)
+nodist_libmicrocurrency_ipc_a_SOURCES = $(libmicrocurrency_ipc_mpgen_output)
+CLEANFILES += $(libmicrocurrency_ipc_mpgen_output)
 endif
 
 include Makefile.minisketch.include

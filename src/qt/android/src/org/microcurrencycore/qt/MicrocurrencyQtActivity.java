@@ -1,4 +1,4 @@
-package org.bitcoincore.qt;
+package org.microcurrencycore.qt;
 
 import android.os.Bundle;
 import android.system.ErrnoException;
@@ -8,14 +8,14 @@ import org.qtproject.qt5.android.bindings.QtActivity;
 
 import java.io.File;
 
-public class BitcoinQtActivity extends QtActivity
+public class MicrocurrencyQtActivity extends QtActivity
 {
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
-        final File bitcoinDir = new File(getFilesDir().getAbsolutePath() + "/.bitcoin");
-        if (!bitcoinDir.exists()) {
-            bitcoinDir.mkdir();
+        final File microcurrencyDir = new File(getFilesDir().getAbsolutePath() + "/.microcurrency");
+        if (!microcurrencyDir.exists()) {
+            microcurrencyDir.mkdir();
         }
 
         super.onCreate(savedInstanceState);

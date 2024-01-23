@@ -4,10 +4,10 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test orphaned block rewards in the wallet."""
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import MicrocurrencyTestFramework
 from test_framework.util import assert_equal
 
-class OrphanedBlockRewardTest(BitcoinTestFramework):
+class OrphanedBlockRewardTest(MicrocurrencyTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
@@ -46,7 +46,7 @@ class OrphanedBlockRewardTest(BitcoinTestFramework):
         })
         # The following abandontransaction is necessary to make the later
         # lines succeed, and probably should not be needed; see
-        # https://github.com/bitcoin/bitcoin/issues/14148.
+        # https://github.com/satoshiware/microcurrency/issues/14148.
         self.nodes[1].abandontransaction(txid)
         assert_equal(self.nodes[1].getbalances()["mine"], {
           "trusted": 10,

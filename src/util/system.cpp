@@ -90,8 +90,8 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
-const char * const BITCOIN_SETTINGS_FILENAME = "settings.json";
+const char * const MICROCURRENCY_CONF_FILENAME = "microcurrency.conf";
+const char * const MICROCURRENCY_SETTINGS_FILENAME = "settings.json";
 
 ArgsManager gArgs;
 
@@ -320,7 +320,7 @@ bool ArgsManager::ParseParameters(int argc, const char* const argv[], std::strin
         if (key.substr(0, 5) == "-psn_") continue;
 #endif
 
-        if (key == "-") break; //bitcoin-tx using stdin
+        if (key == "-") break; //microcurrency-tx using stdin
         std::string val;
         size_t is_index = key.find('=');
         if (is_index != std::string::npos) {
@@ -530,7 +530,7 @@ bool ArgsManager::GetSettingsPath(fs::path* filepath, bool temp) const
         return false;
     }
     if (filepath) {
-        std::string settings = GetArg("-settings", BITCOIN_SETTINGS_FILENAME);
+        std::string settings = GetArg("-settings", MICROCURRENCY_SETTINGS_FILENAME);
         *filepath = fsbridge::AbsPathJoin(GetDataDirNet(), fs::PathFromString(temp ? settings + ".tmp" : settings));
     }
     return true;
@@ -776,7 +776,7 @@ static std::string FormatException(const std::exception* pex, const char* pszThr
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(nullptr, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "bitcoin";
+    const char* pszModule = "microcurrency";
 #endif
     if (pex)
         return strprintf(
@@ -795,12 +795,12 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 
 fs::path GetDefaultDataDir()
 {
-    // Windows: C:\Users\Username\AppData\Roaming\Bitcoin
-    // macOS: ~/Library/Application Support/Bitcoin
-    // Unix-like: ~/.bitcoin
+    // Windows: C:\Users\Username\AppData\Roaming\Microcurrency
+    // macOS: ~/Library/Application Support/Microcurrency
+    // Unix-like: ~/.microcurrency
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Bitcoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Microcurrency";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -810,10 +810,10 @@ fs::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef MAC_OSX
     // macOS
-    return pathRet / "Library/Application Support/Bitcoin";
+    return pathRet / "Library/Application Support/Microcurrency";
 #else
     // Unix-like
-    return pathRet / ".bitcoin";
+    return pathRet / ".microcurrency";
 #endif
 #endif
 }
@@ -910,7 +910,7 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
         m_config_sections.clear();
     }
 
-    const std::string confPath = GetArg("-conf", BITCOIN_CONF_FILENAME);
+    const std::string confPath = GetArg("-conf", MICROCURRENCY_CONF_FILENAME);
     std::ifstream stream{GetConfigFile(confPath)};
 
     // not ok to have a config file specified that cannot be opened

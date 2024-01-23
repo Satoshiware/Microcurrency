@@ -1,43 +1,43 @@
 # It is not recommended to modify this file in-place, because it will
 # be overwritten during package upgrades. If you want to add further
 # options or overwrite existing ones then use
-# $ systemctl edit bitcoind.service
+# $ systemctl edit microcurrencyd.service
 # See "man systemd.service" for details.
 
 # Note that almost all daemon options could be specified in
-# /etc/bitcoin/bitcoin.conf, but keep in mind those explicitly
+# /etc/satoshiware/microcurrency.conf, but keep in mind those explicitly
 # specified as arguments in ExecStart= will override those in the
 # config file.
 
 [Unit]
-Description=Bitcoin daemon
-Documentation=https://github.com/satoshiware/bitcoin/blob/master/doc/init.md
+Description=Microcurrency daemon
+Documentation=https://github.com/satoshiware/microcurrency/blob/master/doc/init.md
 
 # https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/bin/bitcoind -micro \
+ExecStart=/usr/bin/microcurrencyd -micro \
                             -daemonwait \
-                            -pid=/run/bitcoin/bitcoind.pid \
-                            -conf=/etc/bitcoin.conf \
-                            -datadir=/var/lib/bitcoin
+                            -pid=/run/satoshiware/microcurrencyd.pid \
+                            -conf=/etc/microcurrency.conf \
+                            -datadir=/var/lib/microcurrency
 
-ExecStop=/usr/bin/bitcoin-cli -micro \
-                              -conf=/etc/bitcoin.conf \
-                              -datadir=/var/lib/bitcoin \
+ExecStop=/usr/bin/microcurrency-cli -micro \
+                              -conf=/etc/microcurrency.conf \
+                              -datadir=/var/lib/microcurrency \
                               stop
 
 # Make sure the config directory is readable by the service user
 PermissionsStartOnly=true
-ExecStartPre=/bin/chgrp bitcoin /etc/bitcoin.conf
+ExecStartPre=/bin/chgrp microcurrency /etc/microcurrency.conf
 
 # Process management
 ####################
 
 Type=forking
-PIDFile=/run/bitcoin/bitcoind.pid
+PIDFile=/run/satoshiware/microcurrencyd.pid
 Restart=always
 RestartSec=30
 TimeoutStartSec=infinity
@@ -46,16 +46,16 @@ TimeoutStopSec=600
 # Directory creation and permissions
 ####################################
 
-# Run as bitcoin:bitcoin
-User=bitcoin
-Group=bitcoin
+# Run as microcurrency:microcurrency
+User=microcurrency
+Group=microcurrency
 
-# /run/bitcoin
-RuntimeDirectory=bitcoin
+# /run/microcurrency
+RuntimeDirectory=microcurrency
 RuntimeDirectoryMode=0710
 
-# /var/lib/bitcoin
-StateDirectory=bitcoin
+# /var/lib/microcurrency
+StateDirectory=microcurrency
 StateDirectoryMode=0710
 
 # Hardening measures

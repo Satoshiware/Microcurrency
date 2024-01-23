@@ -3,12 +3,12 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
+#include <config/microcurrency-config.h>
 #endif
 
 #include <qt/optionsmodel.h>
 
-#include <qt/bitcoinunits.h>
+#include <qt/microcurrencyunits.h>
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 
@@ -72,7 +72,7 @@ void OptionsModel::Init(bool resetSettings)
 
     // Display
     if (!settings.contains("nDisplayUnit"))
-        settings.setValue("nDisplayUnit", BitcoinUnits::BTC);
+        settings.setValue("nDisplayUnit", MicrocurrencyUnits::MCU);
     nDisplayUnit = settings.value("nDisplayUnit").toInt();
 
     if (!settings.contains("strThirdPartyTxUrls"))
@@ -368,7 +368,7 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return m_use_embedded_monospaced_font;
         case CoinControlFeatures:
             return fCoinControlFeatures;
-        case EnablePSBTControls:
+        case EnablePSMCUontrols:
             return settings.value("enable_psbt_controls");
         case Prune:
             return settings.value("bPrune");
@@ -517,7 +517,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             settings.setValue("fCoinControlFeatures", fCoinControlFeatures);
             Q_EMIT coinControlFeaturesChanged(fCoinControlFeatures);
             break;
-        case EnablePSBTControls:
+        case EnablePSMCUontrols:
             m_enable_psbt_controls = value.toBool();
             settings.setValue("enable_psbt_controls", m_enable_psbt_controls);
             break;
@@ -601,7 +601,7 @@ void OptionsModel::checkAndMigrate()
     if (settingsVersion < CLIENT_VERSION)
     {
         // -dbcache was bumped from 100 to 300 in 0.13
-        // see https://github.com/bitcoin/bitcoin/pull/8273
+        // see https://github.com/satoshiware/microcurrency/pull/8273
         // force people to upgrade to the new value if they are using 100MB
         if (settingsVersion < 130000 && settings.contains("nDatabaseCache") && settings.value("nDatabaseCache").toLongLong() == 100)
             settings.setValue("nDatabaseCache", (qint64)nDefaultDbCache);
